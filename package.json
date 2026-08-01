@@ -1,0 +1,37 @@
+{
+  "name": "Sistem-Informasi-Rental-PS",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx server/db/seed.ts"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^3.2.0",
+    "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
+    "mysql2": "^3.23.2",
+    "nuxt-auth-utils": "^0.5.29",
+    "vue": "^3.5.40"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.121",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "nuxt": "^3.21.10",
+    "tsx": "^4.23.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "vue-demi",
+      "sharp"
+    ]
+  }
+}
