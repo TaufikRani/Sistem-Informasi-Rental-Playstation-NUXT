@@ -25,8 +25,8 @@ pnpm db:seed        # seed data (tsx server/db/seed.ts)
 
 ## Tech Stack
 
-- Nuxt 3 + TypeScript (fullstack monolith)
-- @nuxt/ui v3 (komponen UI) + @iconify-json/lucide (ikon `i-lucide-*`)
+- Nuxt 4 (mode kompatibilitas v3 via `future.compatibilityVersion: 3` — struktur proyek tetap ala Nuxt 3: `pages/`, `server/` di root) + TypeScript (fullstack monolith)
+- @nuxt/ui v4 (komponen UI; layout dashboard via `UDashboardPanel`/`UDashboardNavbar`/`UDashboardSidebar`/`UDashboardToolbar`/`UDashboardSidebarCollapse`/`UDashboardSearch`, ikon `i-lucide-*` via @iconify-json/lucide)
 - nuxt-auth-utils (session auth)
 - Drizzle ORM + MySQL (mysql2)
 - exceljs (export laporan Excel)
@@ -67,9 +67,15 @@ public/           aset statis
 ## Konvensi Frontend
 
 - UI dan pesan **Bahasa Indonesia**.
-- Gunakan komponen @nuxt/ui: `UCard`, `UButton`, `UBadge`, `UInput`, `USelect`, `UIcon` (ikon `i-lucide-*`).
-- CRUD master data via `composables/useCrud(endpoint)` (menyediakan `items`, `loading`, `saving`, `error`, `fetchItems`, `createItem`, `updateItem`, `deleteItem`).
+- Struktur halaman: `<UDashboardPanel id="...">` + slot `#header` (berisi `UDashboardNavbar title="..."` dengan `UDashboardSidebarCollapse` di `#leading` dan aksi di `#right`, lalu `UDashboardToolbar`) + slot `#body`. Layout `default.vue` menyediakan sidebar global (BrandMenu, UserMenu, DashboardSearch).
+- Gunakan komponen @nuxt/ui: `UCard`, `UButton`, `UBadge`, `UInput`, `USelect`, `UFormField`, `UAlert`, `UModal`, `UTable`, `UIcon` (ikon `i-lucide-*`).
+- **@nuxt/ui v4**: kolom `UTable` pakai `{ accessorKey, header }`, slot dinamis `` `${column.id}-cell` `` (mis. `#actions-cell`); **tidak ada `$confirm`** — konfirmasi via komponen `components/ConfirmModal.vue` (pakai `confirm()` native atau `window.confirm`); sukses via notifikasi `useToast`, error ditampilkan lewat `UAlert` di dalam modal; tombol reset radio pakai `native` (dihapus) + slot `#input` (reset via `form.xxx = null`).
+- Tema: color mode via `useColorMode` (Terang/Gelap/Sistem) di menu pengguna; timer sesi main di `pages/main/[id].vue` & kartu room di `pages/main/index.vue` berjalan live tiap detik dan dihitung dari `startedAt` server (persisten walau di-refresh).
+- CRUD master data via `composables/useCrud(endpoint)` (menyediakan `items`, `loading`, `saving`, `error`, `fetchItems`, `createItem`, `updateItem`, `deleteItem`; memakai `useToast`).
+- Fetch data: `useFetch` untuk GET, `$fetch` untuk mutasi; error API dibaca `e?.data?.statusMessage` (selalu fallback pesan Bahasa Indonesia).
+- Halaman transaksi opsional: `pages/main/[id].vue` & `pages/rental/[id].vue` (satu kolom dengan info card + daftar item + tombol aksi), `pages/struk/[id].vue` (layout `auth.vue`, ukuran kertas 58mm via CSS `@page`).
 - Format uang via `formatRupiah`, label status via map di `utils/format.ts` (mis. `ROOM_STATUS_LABEL`, `TRANSACTION_STATUS_LABEL`), warna badge via `statusColor`.
+- Respons API acuan: `/api/dashboard/stats` → `{ rooms, mainActive, rentalActive, today:{revenue,count,productsSold}, monthRevenue, lowStock, activeMains, activeRentals, lateReturns, playstations, controllers }`; `/api/transactions?type=&status=&from=&to=` (daftar semua transaksi); `/api/transactions/rental?status=active|waiting_return|completed|all`; `/api/reports/revenue?type=day|month|year&date=` → `{ revenue:{main,rental,product,penalty,total}, main:{count,totalHours,total}, rental:{active,completed,lateCount,penalty}, products, transactions }`; `/api/penalty-rate` (GET single + PUT).
 
 ## Business Rules (dari PRD)
 

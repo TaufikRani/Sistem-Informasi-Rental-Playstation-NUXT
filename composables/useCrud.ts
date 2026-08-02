@@ -3,6 +3,7 @@ export function useCrud<T extends { id: number }>(endpoint: string) {
   const loading = ref(false)
   const saving = ref(false)
   const error = ref('')
+  const toast = useToast()
 
   async function fetchItems() {
     loading.value = true
@@ -13,15 +14,20 @@ export function useCrud<T extends { id: number }>(endpoint: string) {
     }
   }
 
+  function getErrorMessage(e: any, fallback: string) {
+    return e?.data?.statusMessage || fallback
+  }
+
   async function createItem(payload: Record<string, unknown>) {
     saving.value = true
     error.value = ''
     try {
       await $fetch(endpoint, { method: 'POST', body: payload })
+      toast.add({ title: 'Data berhasil disimpan', color: 'success' })
       await fetchItems()
       return true
     } catch (e: any) {
-      error.value = e?.data?.statusMessage || 'Gagal menyimpan data'
+      error.value = getErrorMessage(e, 'Gagal menyimpan data')
       return false
     } finally {
       saving.value = false
@@ -33,10 +39,11 @@ export function useCrud<T extends { id: number }>(endpoint: string) {
     error.value = ''
     try {
       await $fetch(`${endpoint}/${id}`, { method: 'PUT', body: payload })
+      toast.add({ title: 'Data berhasil diperbarui', color: 'success' })
       await fetchItems()
       return true
     } catch (e: any) {
-      error.value = e?.data?.statusMessage || 'Gagal menyimpan data'
+      error.value = getErrorMessage(e, 'Gagal menyimpan data')
       return false
     } finally {
       saving.value = false
@@ -48,10 +55,11 @@ export function useCrud<T extends { id: number }>(endpoint: string) {
     error.value = ''
     try {
       await $fetch(`${endpoint}/${id}`, { method: 'DELETE' })
+      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       await fetchItems()
       return true
     } catch (e: any) {
-      error.value = e?.data?.statusMessage || 'Gagal menghapus data'
+      error.value = getErrorMessage(e, 'Gagal menghapus data')
       return false
     } finally {
       saving.value = false

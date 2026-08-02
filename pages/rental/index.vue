@@ -1,85 +1,6 @@
-<template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold">Rental PS</h1>
-        <p class="text-neutral-500 text-sm">Kelola rental PlayStation</p>
-      </div>
-      <UButton icon="i-lucide-plus" @click="createOpen = true">Buat Rental</UButton>
-    </div>
-
-    <div class="flex gap-2">
-      <UButtonGroup size="sm">
-        <UButton :color="statusFilter === 'active' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'active'">Menunggu Kembali</UButton>
-        <UButton :color="statusFilter === 'completed' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'completed'">Selesai</UButton>
-        <UButton :color="statusFilter === 'all' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'all'">Semua</UButton>
-      </UButtonGroup>
-    </div>
-
-    <UCard>
-      <UTable :data="items" :loading="loading" :columns="columns" empty="Belum ada rental">
-        <template #status-cell="{ row }">
-          <UBadge :color="row.original.status === 'waiting_return' ? 'warning' : row.original.status === 'completed' ? 'success' : 'neutral'" variant="subtle">
-            {{ TRANSACTION_STATUS_LABEL[row.original.status] }}
-          </UBadge>
-        </template>
-        <template #dueDate-cell="{ row }">
-          <span :class="{ 'text-error font-semibold': isLate(row) }">
-            {{ formatDateTime(row.original.dueDate) }}
-          </span>
-        </template>
-        <template #penalty-cell="{ row }">
-          <span v-if="Number(row.original.penaltyAmount) > 0" class="text-error font-semibold">{{ formatRupiah(row.original.penaltyAmount) }}</span>
-          <span v-else class="text-neutral-400">-</span>
-        </template>
-        <template #grandTotal-cell="{ row }">
-          {{ row.original.status === 'waiting_return' ? formatRupiah(row.original.grandTotal) : formatRupiah(row.original.grandTotal) }}
-        </template>
-        <template #actions-cell="{ row }">
-          <UButton size="sm" color="neutral" variant="soft" @click="navigateTo(`/rental/${row.original.id}`)">
-            {{ row.original.status === 'waiting_return' ? 'Pengembalian' : 'Detail' }}
-          </UButton>
-        </template>
-      </UTable>
-    </UCard>
-
-    <UModal v-model:open="createOpen">
-      <UCard :ui="{ body: 'space-y-4' }">
-        <template #header>
-          <div class="font-semibold">Buat Rental Baru</div>
-        </template>
-
-        <UFormField label="Customer">
-          <USelect v-model="form.customerId" :items="customerOptions" searchable />
-        </UFormField>
-        <UFormField label="PlayStation" required>
-          <USelect v-model="form.playstationId" :items="psOptions" searchable />
-        </UFormField>
-        <UFormField label="Stick (opsional)">
-          <USelect v-model="form.controllerId" :items="controllerOptions" searchable />
-        </UFormField>
-        <UFormField label="Paket Rental" required>
-          <USelect v-model="form.packageId" :items="packageOptions" />
-        </UFormField>
-        <div v-if="selectedPackage" class="text-sm text-neutral-500">
-          Jatuh tempo: <span class="font-semibold text-neutral-800 dark:text-neutral-200">{{ dueDateLabel }}</span>
-        </div>
-        <UFormField label="Catatan">
-          <UTextarea v-model="form.notes" />
-        </UFormField>
-
-        <UAlert v-if="error" color="error" variant="subtle" :title="error" :icon="null" />
-
-        <div class="flex justify-end gap-2 pt-2">
-          <UButton color="neutral" variant="outline" @click="createOpen = false">Batal</UButton>
-          <UButton :loading="saving" @click="onCreate">Buat Rental</UButton>
-        </div>
-      </UCard>
-    </UModal>
-  </div>
-</template>
-
 <script setup lang="ts">
+const toast = useToast()
+
 const { data: customers } = await useFetch('/api/customers')
 const { data: playstations } = await useFetch('/api/playstations')
 const { data: controllers } = await useFetch('/api/controllers')
@@ -90,13 +11,13 @@ const items = ref<any[]>([])
 const loading = ref(false)
 
 const columns = [
-  { id: 'invoiceNumber', key: 'invoiceNumber', label: 'Invoice' },
-  { id: 'customerName', key: 'customerName', label: 'Customer' },
-  { id: 'playstationName', key: 'playstationName', label: 'PlayStation' },
-  { id: 'dueDate', key: 'dueDate', label: 'Jatuh Tempo' },
-  { id: 'penalty', key: 'penalty', label: 'Denda' },
-  { id: 'status', key: 'status', label: 'Status' },
-  { id: 'actions', key: 'actions', label: '', meta: { class: { th: 'text-right', td: 'text-right' } }, id: 'actions' },
+  { accessorKey: 'invoiceNumber', header: 'Invoice' },
+  { accessorKey: 'customerName', header: 'Customer' },
+  { accessorKey: 'playstationName', header: 'PlayStation' },
+  { accessorKey: 'dueDate', header: 'Jatuh Tempo' },
+  { id: 'penalty', header: 'Denda' },
+  { accessorKey: 'status', header: 'Status' },
+  { id: 'actions', header: '', meta: { class: { th: 'text-right', td: 'text-right' } } },
 ]
 
 async function fetchItems() {
@@ -150,6 +71,16 @@ const dueDateLabel = computed(() => {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 })
 
+function openCreate() {
+  error.value = ''
+  form.customerId = null
+  form.playstationId = null
+  form.controllerId = null
+  form.packageId = null
+  form.notes = ''
+  createOpen.value = true
+}
+
 async function onCreate() {
   saving.value = true
   error.value = ''
@@ -168,6 +99,7 @@ async function onCreate() {
       },
     })
     createOpen.value = false
+    toast.add({ title: 'Rental berhasil dibuat', color: 'success' })
     await fetchItems()
     await navigateTo(`/rental/${res.id}`)
   } catch (e: any) {
@@ -177,3 +109,101 @@ async function onCreate() {
   }
 }
 </script>
+
+<template>
+  <UDashboardPanel id="rental">
+    <template #header>
+      <UDashboardNavbar title="Rental PS">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+
+        <template #right>
+          <UButton icon="i-lucide-plus" @click="openCreate">
+            Buat Rental
+          </UButton>
+        </template>
+      </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <template #left>
+          <UButtonGroup size="sm">
+            <UButton :color="statusFilter === 'active' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'active'">
+              Menunggu Kembali
+            </UButton>
+            <UButton :color="statusFilter === 'completed' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'completed'">
+              Selesai
+            </UButton>
+            <UButton :color="statusFilter === 'all' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'all'">
+              Semua
+            </UButton>
+          </UButtonGroup>
+        </template>
+      </UDashboardToolbar>
+    </template>
+
+    <template #body>
+      <UCard>
+        <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada rental">
+          <template #status-cell="{ row }">
+            <UBadge :color="row.original.status === 'waiting_return' ? 'warning' : row.original.status === 'completed' ? 'success' : 'neutral'" variant="subtle">
+              {{ TRANSACTION_STATUS_LABEL[row.original.status] }}
+            </UBadge>
+          </template>
+          <template #dueDate-cell="{ row }">
+            <span :class="{ 'font-semibold text-error': isLate(row) }">
+              {{ formatDateTime(row.original.dueDate) }}
+            </span>
+          </template>
+          <template #penalty-cell="{ row }">
+            <span v-if="Number(row.original.penaltyAmount) > 0" class="font-semibold text-error">{{ formatRupiah(row.original.penaltyAmount) }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
+          <template #actions-cell="{ row }">
+            <div class="flex justify-end">
+              <UButton size="sm" color="neutral" variant="soft" @click="navigateTo(`/rental/${row.original.id}`)">
+                {{ row.original.status === 'waiting_return' ? 'Pengembalian' : 'Detail' }}
+              </UButton>
+            </div>
+          </template>
+        </ScrollableTable>
+      </UCard>
+
+      <UModal v-model:open="createOpen" :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl!' }">
+        <template #content>
+          <UCard :ui="{ body: 'space-y-4' }">
+          <template #header>
+            <div class="font-semibold">Buat Rental Baru</div>
+          </template>
+
+          <UFormField label="Customer">
+            <USelect v-model="form.customerId" :items="customerOptions" searchable />
+          </UFormField>
+          <UFormField label="PlayStation" required>
+            <USelect v-model="form.playstationId" :items="psOptions" searchable />
+          </UFormField>
+          <UFormField label="Stick (opsional)">
+            <USelect v-model="form.controllerId" :items="controllerOptions" searchable />
+          </UFormField>
+          <UFormField label="Paket Rental" required>
+            <USelect v-model="form.packageId" :items="packageOptions" />
+          </UFormField>
+          <div v-if="selectedPackage" class="text-sm text-muted">
+            Jatuh tempo: <span class="font-semibold text-foreground">{{ dueDateLabel }}</span>
+          </div>
+          <UFormField label="Catatan">
+            <UTextarea v-model="form.notes" />
+          </UFormField>
+
+          <UAlert v-if="error" color="error" variant="subtle" :title="error" :icon="null" />
+
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton color="neutral" variant="outline" @click="createOpen = false">Batal</UButton>
+            <UButton :loading="saving" @click="onCreate">Buat Rental</UButton>
+          </div>
+          </UCard>
+        </template>
+      </UModal>
+    </template>
+  </UDashboardPanel>
+</template>

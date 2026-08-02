@@ -1,13 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  future: { compatibilityVersion: 3 as unknown as 4 | 5 },
   devtools: { enabled: true },
   modules: ['@nuxt/ui', 'nuxt-auth-utils'],
   css: ['~/assets/css/main.css'],
   icon: {
     clientBundle: {
       scan: true,
-      collections: ['lucide'],
     },
   },
   runtimeConfig: {

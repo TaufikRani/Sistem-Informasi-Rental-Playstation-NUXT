@@ -40,8 +40,8 @@ export default defineEventHandler(async (event) => {
     .orderBy(transactionDetails.id)
 
   const rate = tx.durationMinutes != null
-    ? Math.ceil(tx.durationMinutes / 60)
-    : Math.ceil((Date.now() - new Date(tx.startedAt).getTime()) / 3600000)
+    ? tx.durationMinutes
+    : Math.max(1, Math.round(((tx.endedAt ?? new Date()).getTime() - new Date(tx.startedAt).getTime()) / 60000))
 
-  return { ...tx, items, elapsedHours: Math.max(0, rate) }
+  return { ...tx, items, elapsedMinutes: Math.max(1, rate) }
 })

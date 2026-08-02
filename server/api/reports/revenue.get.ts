@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sum, count, sql } from 'drizzle-orm'
+import { and, eq, gte, lte, sum, count, sql, inArray } from 'drizzle-orm'
 import { transactions, transactionDetails, rentals } from '../../db/schema'
 
 function getRange(type: string, date: string) {
@@ -41,11 +41,17 @@ export default defineEventHandler(async (event) => {
   const [txs, revenueRows, productRows, rentalStats, mainStats] = await Promise.all([
     completedTx,
     db.select({
-      type: transactions.transactionType,
-      total: sum(transactions.grandTotal),
-    }).from(transactions)
-      .where(and(eq(transactions.status, 'completed'), gte(transactions.createdAt, from), lte(transactions.createdAt, to)))
-      .groupBy(transactions.transactionType),
+      type: transactionDetails.itemType,
+      total: sum(transactionDetails.subtotal),
+    }).from(transactionDetails)
+      .innerJoin(transactions, eq(transactionDetails.transactionId, transactions.id))
+      .where(and(
+        inArray(transactionDetails.itemType, ['MAIN', 'RENTAL']),
+        eq(transactions.status, 'completed'),
+        gte(transactions.createdAt, from),
+        lte(transactions.createdAt, to),
+      ))
+      .groupBy(transactionDetails.itemType),
     db.select({
       productName: transactionDetails.itemName,
       qty: sum(transactionDetails.qty),

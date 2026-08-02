@@ -13,15 +13,14 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
   const durationMinutes = Math.max(1, Math.round((now.getTime() - new Date(tx.startedAt).getTime()) / 60000))
-  const hours = Math.ceil(durationMinutes / 60)
 
   const items = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, id))
 
   for (const item of items) {
     if (item.itemType === 'MAIN') {
       const unitPrice = Number(item.unitPrice)
-      const subtotal = hours * unitPrice
-      await db.update(transactionDetails).set({ qty: String(hours), subtotal: String(subtotal) })
+      const subtotal = Math.ceil(durationMinutes * unitPrice / 60)
+      await db.update(transactionDetails).set({ qty: String(durationMinutes), unit: 'MENIT', subtotal: String(subtotal) })
         .where(eq(transactionDetails.id, item.id))
     }
   }
