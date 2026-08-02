@@ -28,6 +28,11 @@ async function main() {
     role: 'cashier',
   }).onDuplicateKeyUpdate({ set: { name: 'Kasir' } })
 
+  await db.delete(schema.playRates)
+  await db.delete(schema.rentalPackages)
+  await db.delete(schema.penaltyRates)
+  await db.delete(schema.customers)
+
   const rates = [
     { name: 'Reguler', roomType: 'reguler', hourlyRate: '5000' },
     { name: 'VIP', roomType: 'vip', hourlyRate: '10000' },
@@ -44,6 +49,15 @@ async function main() {
   ])
 
   await db.insert(schema.penaltyRates).values({ hourlyPenalty: '5000' })
+
+  const customerList = [
+    { name: 'Andi Pratama', phone: '081234567890', identityNumber: 'KTP-3171012312960001', address: 'Jl. Merdeka No. 10, Jakarta' },
+    { name: 'Budi Santoso', phone: '081298765432', identityNumber: 'KTP-3171011501900002', address: 'Jl. Sudirman No. 45, Jakarta' },
+    { name: 'Citra Lestari', phone: '081377654321', identityNumber: 'SIM-6502071201880003', address: 'Jl. Melati No. 8, Bandung' },
+  ]
+  for (const c of customerList) {
+    await db.insert(schema.customers).values(c)
+  }
 
   const productList = [
     { productCode: 'PDT-001', category: 'drink', name: 'Air Mineral', price: '5000', stock: 50, minimumStock: 10 },

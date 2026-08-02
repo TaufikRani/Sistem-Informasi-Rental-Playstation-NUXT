@@ -22,3 +22,6 @@ logs
 .env
 .env.*
 !.env.example
+
+# Environment secrets (local)
+.env

@@ -1,0 +1,38 @@
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD di file .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-rental_ps}
+      MYSQL_USER: ${DB_USER:?set DB_USER di file .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD di file .env}
+      TZ: ${DB_TZ:-UTC}
+    ports:
+      - "${DB_PORT:-3308}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8082}:3000"
+    environment:
+      # dipakai script migrate/seed (node murni)
+      DATABASE_URL: "mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${MYSQL_DATABASE:-rental_ps}?timezone=Z"
+      # dipakai runtime aplikasi Nuxt (runtimeConfig)
+      NUXT_DATABASE_URL: "mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${MYSQL_DATABASE:-rental_ps}?timezone=Z"
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?set NUXT_SESSION_PASSWORD di file .env}
+      NUXT_PUBLIC_APP_BASE_URL: ${APP_URL:-http://localhost:8082}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
