@@ -171,7 +171,9 @@ async function onCancelConfirm() {
       <UDashboardToolbar>
         <template #left>
           <p class="text-sm text-muted">
-            {{ data?.customerName || 'Umum' }} {{ data?.customerPhone }}
+            {{ data?.customerName || 'Umum' }}
+            <span v-if="data?.customerPhone" class="text-muted/70">• {{ data?.customerPhone }}</span>
+            <span v-if="data?.customerIdentityNumber" class="font-mono text-muted/70">• {{ data?.customerIdentityNumber }}</span>
           </p>
         </template>
       </UDashboardToolbar>
@@ -205,6 +207,34 @@ async function onCancelConfirm() {
                 />
               </template>
             </ScrollableTable>
+          </UCard>
+
+          <UCard>
+            <template #header>
+              <div class="flex items-center gap-2 font-semibold">
+                <UIcon name="i-lucide-id-card" class="size-4 text-primary" />
+                Identitas Penyewa
+              </div>
+            </template>
+
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="text-xs text-muted">Nama</div>
+                <div class="font-medium">{{ data?.customerName || '-' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">No. Identitas</div>
+                <div class="font-mono font-medium">{{ data?.customerIdentityNumber || '-' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Telepon</div>
+                <div class="font-medium">{{ data?.customerPhone || '-' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Alamat</div>
+                <div class="font-medium">{{ data?.customerAddress || '-' }}</div>
+              </div>
+            </div>
           </UCard>
 
           <UCard>

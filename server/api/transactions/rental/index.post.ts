@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { transactions, transactionDetails, rentals, playstations, controllers, rentalPackages, customers } from '../../../db/schema'
+import { transactions, transactionDetails, rentals, playstations, controllers, rentalPackages, customers, rooms } from '../../../db/schema'
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
@@ -9,6 +9,9 @@ export default defineEventHandler(async (event) => {
   const playstationId = Number(body.playstationId)
   const ps = await db.query.playstations.findFirst({ where: eq(playstations.id, playstationId) })
   if (!ps) throw createError({ statusCode: 404, statusMessage: 'PlayStation tidak ditemukan' })
+  const psRoom = ps.roomId ? await db.query.rooms.findFirst({ where: eq(rooms.id, ps.roomId) }) : null
+  if (psRoom && psRoom.status === 'occupied') throw createError({ statusCode: 422, statusMessage: 'PlayStation sedang dipakai Main di Tempat' })
+
   if (ps.status !== 'ready') throw createError({ statusCode: 422, statusMessage: 'PlayStation sedang tidak tersedia' })
 
   let controllerId: number | null = null
@@ -22,11 +25,10 @@ export default defineEventHandler(async (event) => {
   const pkg = await db.query.rentalPackages.findFirst({ where: eq(rentalPackages.id, Number(body.packageId)) })
   if (!pkg || !pkg.isActive) throw createError({ statusCode: 422, statusMessage: 'Paket rental tidak valid' })
 
-  let customerId: number | null = null
-  if (body.customerId) {
-    const c = await db.query.customers.findFirst({ where: eq(customers.id, Number(body.customerId)) })
-    if (c) customerId = c.id
-  }
+  const customerId = Number(body.customerId)
+  if (!customerId) throw createError({ statusCode: 422, statusMessage: 'Customer wajib diisi sebagai jaminan identitas rental' })
+  const c = await db.query.customers.findFirst({ where: eq(customers.id, customerId) })
+  if (!c) throw createError({ statusCode: 404, statusMessage: 'Customer tidak ditemukan' })
 
   const invoiceNumber = await generateInvoiceNumber(db)
   const now = new Date()

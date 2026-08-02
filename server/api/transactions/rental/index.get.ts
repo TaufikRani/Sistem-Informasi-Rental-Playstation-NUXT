@@ -14,6 +14,8 @@ export default defineEventHandler(async (event) => {
     status: transactions.status,
     startedAt: transactions.startedAt,
     customerName: sql`COALESCE(customers.name, 'Umum')`.as('customerName'),
+    identityNumber: sql`COALESCE(customers.identity_number, '')`.as('identityNumber'),
+    phone: sql`COALESCE(customers.phone, '')`.as('phone'),
     playstationName: sql`playstations.name`.as('playstationName'),
     dueDate: rentals.dueDate,
     returnDate: rentals.returnDate,

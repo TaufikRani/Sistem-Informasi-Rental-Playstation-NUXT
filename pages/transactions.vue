@@ -50,8 +50,9 @@ function resetFilters() {
   filters.status = 'all'
   filters.from = ''
   filters.to = ''
-  fetchItems()
 }
+
+watch(filters, () => fetchItems())
 
 function formatDateTime(d: string) {
   return new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -75,7 +76,6 @@ onMounted(() => fetchItems())
           <USelect v-model="filters.status" :items="statusOptions" class="w-48" />
           <UInput v-model="filters.from" type="date" class="w-40" />
           <UInput v-model="filters.to" type="date" class="w-40" />
-          <UButton icon="i-lucide-search" @click="fetchItems">Filter</UButton>
           <UButton color="neutral" variant="outline" @click="resetFilters">Reset</UButton>
         </template>
       </UDashboardToolbar>

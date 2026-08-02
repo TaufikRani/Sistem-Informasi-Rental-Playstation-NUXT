@@ -225,7 +225,7 @@ async function onCancelConfirm() {
           <UButton v-if="data?.status === 'active'" color="neutral" variant="outline" icon="i-lucide-x" @click="cancelOpen = true">
             Batalkan
           </UButton>
-          <UButton v-if="data?.status === 'active'" color="success" icon="i-lucide-check" @click="openFinish">
+          <UButton v-if="data?.status === 'active'" color="primary" icon="i-lucide-check" @click="openFinish">
             Selesai & Bayar
           </UButton>
         </template>
@@ -437,7 +437,7 @@ async function onCancelConfirm() {
 
           <div class="flex justify-end gap-2 pt-2">
             <UButton color="neutral" variant="outline" @click="finishOpen = false">Batal</UButton>
-            <UButton color="success" :loading="finishing" @click="onFinish">Selesaikan</UButton>
+            <UButton color="primary" :loading="finishing" @click="onFinish">Selesaikan</UButton>
           </div>
           </UCard>
         </template>

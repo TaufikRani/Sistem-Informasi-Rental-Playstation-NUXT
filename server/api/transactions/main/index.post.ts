@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { transactions, transactionDetails, rooms, playRates, customers } from '../../../db/schema'
+import { transactions, transactionDetails, rooms, playRates, customers, playstations } from '../../../db/schema'
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
@@ -15,6 +15,13 @@ export default defineEventHandler(async (event) => {
     .where(and(eq(transactions.roomId, roomId), eq(transactions.status, 'active')))
     .limit(1)
   if (active.length) throw createError({ statusCode: 422, statusMessage: 'Room sudah memiliki transaksi aktif' })
+
+  const roomPS = await db.select().from(playstations)
+    .where(and(eq(playstations.roomId, roomId), eq(playstations.status, 'rented')))
+    .limit(1)
+  if (roomPS.length) {
+    throw createError({ statusCode: 422, statusMessage: `PlayStation ${roomPS[0].name} sedang di-rental` })
+  }
 
   const rate = await db.query.playRates.findFirst({ where: and(eq(playRates.roomType, room.roomType), eq(playRates.isActive, true)) })
 

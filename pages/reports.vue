@@ -62,11 +62,11 @@ watch([type, date], () => refresh())
 
       <UDashboardToolbar>
         <template #left>
-          <UButtonGroup size="sm">
-            <UButton :color="type === 'day' ? 'primary' : 'neutral'" variant="soft" @click="type = 'day'">Harian</UButton>
-            <UButton :color="type === 'month' ? 'primary' : 'neutral'" variant="soft" @click="type = 'month'">Bulanan</UButton>
-            <UButton :color="type === 'year' ? 'primary' : 'neutral'" variant="soft" @click="type = 'year'">Tahunan</UButton>
-          </UButtonGroup>
+          <div class="flex items-center gap-1.5">
+            <UButton size="sm" :color="type === 'day' ? 'primary' : 'neutral'" variant="soft" @click="type = 'day'">Harian</UButton>
+            <UButton size="sm" :color="type === 'month' ? 'primary' : 'neutral'" variant="soft" @click="type = 'month'">Bulanan</UButton>
+            <UButton size="sm" :color="type === 'year' ? 'primary' : 'neutral'" variant="soft" @click="type = 'year'">Tahunan</UButton>
+          </div>
           <UInput v-model="date" type="date" />
         </template>
       </UDashboardToolbar>

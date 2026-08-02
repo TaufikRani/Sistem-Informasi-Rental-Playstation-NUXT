@@ -53,6 +53,10 @@ function rateLabel(roomType: string) {
   return rate ? formatRupiah(rate.hourlyRate) + '/jam' : '-'
 }
 
+function psUnavailable(room: any) {
+  return !!room.playstationName && room.playstationStatus !== 'ready'
+}
+
 function openDetail(id?: number) {
   if (id) navigateTo(`/main/${id}`)
 }
@@ -113,10 +117,19 @@ await refresh()
 
             <div class="mb-4 text-sm text-muted">{{ ROOM_TYPE_LABEL[room.roomType] || room.roomType }} • {{ rateLabel(room.roomType) }}</div>
 
+            <div v-if="room.playstationName" class="mb-4 flex items-center gap-2">
+              <UIcon name="i-lucide-gamepad-2" class="size-4 shrink-0 text-primary" />
+              <span class="text-sm font-medium">{{ room.playstationName }}</span>
+              <span class="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted">{{ room.playstationCode }}</span>
+              <UBadge v-if="room.playstationStatus !== 'ready'" :color="room.playstationStatus === 'maintenance' ? 'warning' : 'info'" variant="subtle" size="sm">
+                {{ ASSET_STATUS_LABEL[room.playstationStatus] }}
+              </UBadge>
+            </div>
+
             <UButton
               block
-              :color="room.status === 'occupied' ? 'info' : 'success'"
-              :disabled="room.status === 'maintenance'"
+              :color="room.status === 'occupied' ? 'info' : 'primary'"
+              :disabled="room.status === 'maintenance' || (room.status === 'ready' && psUnavailable(room))"
               @click="room.status === 'occupied' ? openDetail(activeByRoom[room.id]?.id) : startMain(room)"
             >
               {{ room.status === 'occupied' ? 'Kelola Sesi' : room.status === 'maintenance' ? 'Maintenance' : 'Mulai Main' }}

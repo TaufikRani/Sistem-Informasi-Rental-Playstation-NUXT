@@ -6,13 +6,14 @@ const { data: playstations } = await useFetch('/api/playstations')
 const { data: controllers } = await useFetch('/api/controllers')
 const { data: packages } = await useFetch('/api/rental-packages')
 
-const statusFilter = ref('active')
+const statusFilter = ref('waiting_return')
 const items = ref<any[]>([])
 const loading = ref(false)
 
 const columns = [
   { accessorKey: 'invoiceNumber', header: 'Invoice' },
   { accessorKey: 'customerName', header: 'Customer' },
+  { accessorKey: 'identityNumber', header: 'Identitas' },
   { accessorKey: 'playstationName', header: 'PlayStation' },
   { accessorKey: 'dueDate', header: 'Jatuh Tempo' },
   { id: 'penalty', header: 'Denda' },
@@ -40,10 +41,11 @@ function formatDateTime(d: string) {
   return new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-const customerOptions = computed(() => [
-  { label: 'Umum (tanpa customer)', value: null },
-  ...(customers.value || []).map((c: any) => ({ label: c.name + (c.phone ? ` — ${c.phone}` : ''), value: c.id })),
-])
+const customerOptions = computed(() => (customers.value || [])
+  .map((c: any) => ({
+    label: c.name + (c.phone ? ` — ${c.phone}` : '') + (c.identityNumber ? ` (${c.identityNumber})` : ''),
+    value: c.id,
+  })))
 
 const psOptions = computed(() => (playstations.value || [])
   .filter((p: any) => p.status === 'ready')
@@ -85,8 +87,8 @@ async function onCreate() {
   saving.value = true
   error.value = ''
   try {
-    if (!form.playstationId || !form.packageId) {
-      throw { data: { statusMessage: 'Pilih PlayStation dan paket rental' } }
+    if (!form.customerId || !form.playstationId || !form.packageId) {
+      throw { data: { statusMessage: 'Pilih customer, PlayStation, dan paket rental' } }
     }
     const res = await $fetch('/api/transactions/rental', {
       method: 'POST',
@@ -127,17 +129,17 @@ async function onCreate() {
 
       <UDashboardToolbar>
         <template #left>
-          <UButtonGroup size="sm">
-            <UButton :color="statusFilter === 'active' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'active'">
+          <div class="flex items-center gap-1.5">
+            <UButton size="sm" :color="statusFilter === 'waiting_return' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'waiting_return'">
               Menunggu Kembali
             </UButton>
-            <UButton :color="statusFilter === 'completed' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'completed'">
+            <UButton size="sm" :color="statusFilter === 'completed' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'completed'">
               Selesai
             </UButton>
-            <UButton :color="statusFilter === 'all' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'all'">
+            <UButton size="sm" :color="statusFilter === 'all' ? 'primary' : 'neutral'" variant="soft" @click="statusFilter = 'all'">
               Semua
             </UButton>
-          </UButtonGroup>
+          </div>
         </template>
       </UDashboardToolbar>
     </template>
@@ -145,6 +147,10 @@ async function onCreate() {
     <template #body>
       <UCard>
         <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada rental">
+          <template #identityNumber-cell="{ row }">
+            <span v-if="row.original.identityNumber" class="font-mono text-xs">{{ row.original.identityNumber }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
           <template #status-cell="{ row }">
             <UBadge :color="row.original.status === 'waiting_return' ? 'warning' : row.original.status === 'completed' ? 'success' : 'neutral'" variant="subtle">
               {{ TRANSACTION_STATUS_LABEL[row.original.status] }}
@@ -176,7 +182,7 @@ async function onCreate() {
             <div class="font-semibold">Buat Rental Baru</div>
           </template>
 
-          <UFormField label="Customer">
+          <UFormField label="Customer" required :hint="'Wajib — jaminan identitas untuk barang rental'">
             <USelect v-model="form.customerId" :items="customerOptions" searchable />
           </UFormField>
           <UFormField label="PlayStation" required>

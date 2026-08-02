@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
     customerId: transactions.customerId,
     customerName: sql`COALESCE(customers.name, 'Umum')`.as('customerName'),
     customerPhone: sql`COALESCE(customers.phone, '')`.as('customerPhone'),
+    customerIdentityNumber: sql`COALESCE(customers.identity_number, '')`.as('customerIdentityNumber'),
+    customerAddress: sql`COALESCE(customers.address, '')`.as('customerAddress'),
     startedAt: transactions.startedAt,
     endedAt: transactions.endedAt,
     subtotal: transactions.subtotal,
