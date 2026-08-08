@@ -20,7 +20,7 @@ pnpm db:migrate     # drizzle-kit migrate
 pnpm db:seed        # seed data (tsx server/db/seed.ts)
 ```
 
-- Seed: login `admin` / `admin123` (role admin). Hanya 1 role — Admin.
+- Seed: truncate semua tabel → fresh insert. Login: `admin` / `admin123` (role admin). Hanya 1 role — Admin.
 - Tidak ada script lint/typecheck/test.
 
 ## Tech Stack

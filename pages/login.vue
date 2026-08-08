@@ -90,14 +90,6 @@ async function onSubmit() {
         >
           admin / admin123
         </UButton>
-        <UButton
-          size="xs"
-          variant="soft"
-          icon="i-lucide-user"
-          @click="form.username = 'kasir'; form.password = 'kasir123'"
-        >
-          kasir / kasir123
-        </UButton>
       </div>
     </div>
   </div>

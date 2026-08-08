@@ -202,6 +202,26 @@ Frontend:
 
 ---
 
+## 14. Clean Seed & Migration Consistency
+
+**Masalah**:
+- 3 perubahan schema diterapkan via direct SQL tanpa tercatat di file migration (room_type removal, rentals varchar)
+- Seed tidak idempotent — duplicate key error saat re-run
+- Schema default `users.role` masih `'cashier'`
+- Login page tampil 2 akun demo padahal cuma 1 role
+
+**Perubahan**:
+- `users.role` default: `'cashier'` → `'admin'` di schema.ts
+- Migration `0002_curved_moon_knight.sql` — cover 4 perubahan manual:
+  - `rooms` drop `room_type`, add `play_rate_id`
+  - `play_rates` drop `room_type`
+  - `rentals.controller_id` int → varchar(255)
+- Seed rewrite: truncate **semua** tabel → fresh insert berurutan
+- Seed data: 1 user, 5 room, 5 PS, 5 TV, 10 stick, 3 play rate, 3 paket, 1 denda, 3 customer, 8 produk
+- Login page: hapus button demo `kasir / kasir123`
+
+---
+
 ## Migration
 
 Tiga migration manual di-apply ke DB:
