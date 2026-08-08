@@ -21,6 +21,7 @@ pnpm db:seed        # seed data (tsx server/db/seed.ts)
 ```
 
 - Seed: truncate semua tabel → fresh insert. Login: `admin` / `admin123` (role admin). Hanya 1 role — Admin.
+- Docker (produksi): `docker compose up -d --build`. Startup app (`scripts/start.sh` → `wait-db.mjs` → `seed-if-empty.mjs`) otomatis migrate+seed **hanya** jika tabel `users` belum ada (DB fresh) atau kosong — dicek via `SHOW TABLES LIKE 'users'` dulu, **jangan** query `users` langsung karena akan crash loop (ER_NO_SUCH_TABLE) saat DB kosong. Reset total: `docker compose down -v && docker compose up -d --build`.
 - Tidak ada script lint/typecheck/test.
 
 ## Tech Stack
