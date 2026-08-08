@@ -47,9 +47,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -86,7 +86,7 @@ onMounted(() => crud.fetchItems())
             {{ formatRupiah(row.original.price) }}
           </template>
           <template #durationDays-cell="{ row }">
-            {{ row.original.durationDays }} hari
+            {{ Number(row.original.durationDays) }} hari ({{ Number(row.original.durationDays) * 24 }} jam)
           </template>
           <template #isActive-cell="{ row }">
             <UBadge :color="row.original.isActive ? 'success' : 'neutral'" variant="subtle">{{ row.original.isActive ? 'Aktif' : 'Nonaktif' }}</UBadge>
@@ -110,8 +110,8 @@ onMounted(() => crud.fetchItems())
           <UFormField label="Nama Paket" name="name" required>
             <UInput v-model="form.name" placeholder="7 Hari" />
           </UFormField>
-          <UFormField label="Lama Hari" name="durationDays" required>
-            <UInput v-model="form.durationDays" type="number" min="1" />
+          <UFormField label="Lama (hari, bisa desimal)" name="durationDays" required>
+            <UInput v-model="form.durationDays" type="number" min="0.5" step="0.5" />
           </UFormField>
           <UFormField label="Harga" name="price" required>
             <UInput v-model="form.price" type="number" min="0">
@@ -135,6 +135,7 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Paket"
+        @confirm="onDelete"
 
         :loading="deleting"
               >

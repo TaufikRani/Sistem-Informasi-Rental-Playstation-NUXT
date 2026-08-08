@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     .leftJoin(sql`rooms`, sql`rooms.id = transactions.room_id`)
     .leftJoin(sql`users`, sql`users.id = transactions.created_by`)
     .where(where)
-    .orderBy(desc(transactions.createdAt))
+    .orderBy(desc(transactions.updatedAt))
     .limit(limit)
 
   return rows

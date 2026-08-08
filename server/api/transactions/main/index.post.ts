@@ -23,7 +23,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: `PlayStation ${roomPS[0].name} sedang di-rental` })
   }
 
-  const rate = await db.query.playRates.findFirst({ where: and(eq(playRates.roomType, room.roomType), eq(playRates.isActive, true)) })
+  const rate = room.playRateId
+    ? await db.query.playRates.findFirst({ where: and(eq(playRates.id, room.playRateId), eq(playRates.isActive, true)) })
+    : null
 
   let customerId: number | null = null
   if (body.customerId) {
@@ -51,7 +53,7 @@ export default defineEventHandler(async (event) => {
     createdBy: user.id,
   }).$returningId()
 
-  const rateName = rate ? `${rate.name} (${room.roomType})` : room.roomType
+  const rateName = rate ? rate.name : 'Tanpa Tarif'
   await db.insert(transactionDetails).values({
     transactionId: tx.id,
     itemType: 'MAIN',

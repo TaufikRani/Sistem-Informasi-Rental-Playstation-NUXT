@@ -21,34 +21,27 @@ async function main() {
     role: 'admin',
   }).onDuplicateKeyUpdate({ set: { name: 'Administrator' } })
 
-  await db.insert(schema.users).values({
-    name: 'Kasir',
-    username: 'kasir',
-    passwordHash: hashPassword('kasir123'),
-    role: 'cashier',
-  }).onDuplicateKeyUpdate({ set: { name: 'Kasir' } })
-
   await db.delete(schema.playRates)
   await db.delete(schema.rentalPackages)
   await db.delete(schema.penaltyRates)
   await db.delete(schema.customers)
 
   const rates = [
-    { name: 'Reguler', roomType: 'reguler', hourlyRate: '5000' },
-    { name: 'VIP', roomType: 'vip', hourlyRate: '10000' },
-    { name: 'Premium', roomType: 'premium', hourlyRate: '15000' },
+    { name: 'Tarif Reguler', hourlyRate: '5000' },
+    { name: 'Tarif VIP', hourlyRate: '10000' },
+    { name: 'Tarif Premium', hourlyRate: '15000' },
   ]
   for (const r of rates) {
     await db.insert(schema.playRates).values(r)
   }
 
   await db.insert(schema.rentalPackages).values([
-    { name: '3 Hari', durationDays: 3, price: '50000' },
-    { name: '7 Hari', durationDays: 7, price: '100000' },
-    { name: '14 Hari', durationDays: 14, price: '180000' },
+    { name: '3 Hari', durationDays: '3', price: '50000' },
+    { name: '7 Hari', durationDays: '7', price: '100000' },
+    { name: '14 Hari', durationDays: '14', price: '180000' },
   ])
 
-  await db.insert(schema.penaltyRates).values({ hourlyPenalty: '5000' })
+  await db.insert(schema.penaltyRates).values({ name: 'Denda Standar', type: 'hourly', amount: '5000', isActive: true })
 
   const customerList = [
     { name: 'Andi Pratama', phone: '081234567890', identityNumber: 'KTP-3171012312960001', address: 'Jl. Merdeka No. 10, Jakarta' },
@@ -74,14 +67,14 @@ async function main() {
   }
 
   const roomList = [
-    { name: 'Room 1', roomType: 'reguler' },
-    { name: 'Room 2', roomType: 'reguler' },
-    { name: 'Room 3', roomType: 'vip' },
-    { name: 'Room 4', roomType: 'vip' },
-    { name: 'Room 5', roomType: 'premium' },
+    { name: 'Room 1', playRateId: 1 },
+    { name: 'Room 2', playRateId: 1 },
+    { name: 'Room 3', playRateId: 2 },
+    { name: 'Room 4', playRateId: 2 },
+    { name: 'Room 5', playRateId: 3 },
   ]
   for (const r of roomList) {
-    await db.insert(schema.rooms).values(r).onDuplicateKeyUpdate({ set: { roomType: r.roomType } })
+    await db.insert(schema.rooms).values(r).onDuplicateKeyUpdate({ set: { playRateId: r.playRateId } })
   }
 
   const psList = [
@@ -117,7 +110,7 @@ async function main() {
     }
   }
 
-  console.log('Seed selesai. Login admin: admin / admin123 | kasir: kasir / kasir123')
+  console.log('Seed selesai. Login: admin / admin123')
   await conn.end()
 }
 

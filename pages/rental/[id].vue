@@ -6,9 +6,20 @@ const toast = useToast()
 
 const { data, refresh } = await useFetch(`/api/transactions/rental/${id}`)
 const { data: products, refresh: refreshProducts } = await useFetch('/api/products')
-const { data: penalty } = await useFetch('/api/penalty-rate')
+const { data: penalty } = await useFetch('/api/penalty-rates')
+const { data: allControllers } = await useFetch('/api/controllers')
+const penaltyRate = computed(() => (penalty.value || []).find((p: any) => p.type === 'hourly' && p.isActive))
 
-const hourlyPenalty = computed(() => Number(penalty.value?.hourlyPenalty || 0))
+const controllerList = computed(() => {
+  if (!data.value?.controllerId) return []
+  const ids = String(data.value.controllerId).split(',').map(Number).filter(n => n > 0)
+  return ids.map(id => {
+    const c = (allControllers.value || []).find((c: any) => c.id === id)
+    return c ? `No. ${c.controllerNumber} (${c.assetCode})` : `#${id}`
+  })
+})
+
+const hourlyPenalty = computed(() => Number(penaltyRate.value?.amount || 0))
 const isLate = computed(() => {
   if (data.value?.status !== 'waiting_return') return false
   return new Date(data.value?.dueDate).getTime() < Date.now()
@@ -249,7 +260,10 @@ async function onCancelConfirm() {
               </div>
               <div>
                 <div class="text-xs text-muted">Stick</div>
-                <div class="font-medium">{{ data?.controllerNumber ? `No. ${data.controllerNumber}` : '-' }}</div>
+                <div v-if="controllerList.length" class="font-medium space-y-0.5">
+                  <div v-for="(c, i) in controllerList" :key="i">{{ c }}</div>
+                </div>
+                <div v-else class="font-medium text-muted">-</div>
               </div>
               <div>
                 <div class="text-xs text-muted">Paket</div>

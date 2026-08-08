@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { transactions, transactionDetails, products, stockMovements } from '../../../../db/schema'
+import { transactions, transactionDetails, products, stockMovements, rooms, playRates } from '../../../../db/schema'
 
 export default defineEventHandler(async (event) => {
   await requireUser(event)
@@ -16,11 +16,21 @@ export default defineEventHandler(async (event) => {
 
   const items = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, id))
 
+  let currentRate: number | null = null
+  if (tx.roomId) {
+    const [room] = await db.select({ playRateId: rooms.playRateId }).from(rooms).where(eq(rooms.id, tx.roomId))
+    if (room?.playRateId) {
+      const [rate] = await db.select({ hourlyRate: playRates.hourlyRate }).from(playRates)
+        .where(and(eq(playRates.id, room.playRateId), eq(playRates.isActive, true)))
+      if (rate) currentRate = Number(rate.hourlyRate)
+    }
+  }
+
   for (const item of items) {
     if (item.itemType === 'MAIN') {
-      const unitPrice = Number(item.unitPrice)
+      const unitPrice = currentRate !== null ? currentRate : Number(item.unitPrice)
       const subtotal = Math.ceil(durationMinutes * unitPrice / 60)
-      await db.update(transactionDetails).set({ qty: String(durationMinutes), unit: 'MENIT', subtotal: String(subtotal) })
+      await db.update(transactionDetails).set({ qty: String(durationMinutes), unit: 'MENIT', unitPrice: String(unitPrice), subtotal: String(subtotal) })
         .where(eq(transactionDetails.id, item.id))
     }
   }

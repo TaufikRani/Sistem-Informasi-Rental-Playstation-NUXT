@@ -2,14 +2,14 @@ import { eq } from 'drizzle-orm'
 import { users } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requireUser(event)
   const id = Number(getRouterParam(event, 'id'))
   const body = await readBody(event)
   const db = useDb()
 
   const name = String(body.name || '').trim()
   const username = String(body.username || '').trim()
-  const role = String(body.role || 'cashier')
+  const role = 'admin'
   if (!name || !username) {
     throw createError({ statusCode: 422, statusMessage: 'Nama dan username wajib diisi' })
   }

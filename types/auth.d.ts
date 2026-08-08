@@ -5,6 +5,6 @@ declare module '#auth-utils' {
     id: number
     name: string
     username: string
-    role: 'admin' | 'cashier'
+    role: 'admin'
   }
 }

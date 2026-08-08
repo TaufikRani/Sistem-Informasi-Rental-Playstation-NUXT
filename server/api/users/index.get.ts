@@ -1,8 +1,8 @@
-import { asc } from 'drizzle-orm'
+import { desc } from 'drizzle-orm'
 import { users } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requireUser(event)
   const db = useDb()
   const rows = await db.select({
     id: users.id,
@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
     role: users.role,
     isActive: users.isActive,
     createdAt: users.createdAt,
-  }).from(users).orderBy(asc(users.name))
+    updatedAt: users.updatedAt,
+  }).from(users).orderBy(desc(users.updatedAt))
   return rows
 })

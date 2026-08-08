@@ -48,9 +48,9 @@ const stats = computed(() => {
   return s
 })
 
-function rateLabel(roomType: string) {
-  const rate = rates.value?.find((r: any) => r.roomType === roomType && r.isActive)
-  return rate ? formatRupiah(rate.hourlyRate) + '/jam' : '-'
+function rateLabel(room: any) {
+  const rate = rates.value?.find((r: any) => r.id === room.playRateId && r.isActive)
+  return rate ? `${rate.name} • ${formatRupiah(rate.hourlyRate)}/jam` : '-'
 }
 
 function psUnavailable(room: any) {
@@ -115,7 +115,7 @@ await refresh()
               <UBadge :color="statusColor(room.status)" variant="subtle">{{ ROOM_STATUS_LABEL[room.status] || room.status }}</UBadge>
             </div>
 
-            <div class="mb-4 text-sm text-muted">{{ ROOM_TYPE_LABEL[room.roomType] || room.roomType }} • {{ rateLabel(room.roomType) }}</div>
+            <div class="mb-4 text-sm text-muted">{{ rateLabel(room) }}</div>
 
             <div v-if="room.playstationName" class="mb-4 flex items-center gap-2">
               <UIcon name="i-lucide-gamepad-2" class="size-4 shrink-0 text-primary" />

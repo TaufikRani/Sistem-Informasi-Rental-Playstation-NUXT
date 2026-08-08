@@ -49,18 +49,43 @@ const customerOptions = computed(() => (customers.value || [])
 
 const psOptions = computed(() => (playstations.value || [])
   .filter((p: any) => p.status === 'ready')
-  .map((p: any) => ({ label: `${p.assetCode} — ${p.name}`, value: p.id })))
+  .map((p: any) => ({ label: `${p.assetCode} — ${p.name}${p.roomName ? ` (${p.roomName})` : ' (Tanpa Room)'}`, value: p.id })))
 
-const controllerOptions = computed(() => [
-  { label: 'Tanpa stick', value: null },
-  ...(controllers.value || []).filter((c: any) => c.status === 'ready').map((c: any) => ({ label: `${c.assetCode} — No. ${c.controllerNumber}`, value: c.id })),
-])
+const availableControllers = computed(() =>
+  (controllers.value || []).filter((c: any) => c.status === 'ready')
+)
+
+const selectedControllerIds = ref<number[]>([])
+
+const unselectedControllers = computed(() =>
+  (controllers.value || []).filter((c: any) => c.status === 'ready' && !selectedControllerIds.value.includes(c.id))
+)
+
+const controllerAddOptions = computed(() =>
+  unselectedControllers.value.map((c: any) => ({
+    label: `${c.assetCode} — No. ${c.controllerNumber}${c.roomName ? ` (${c.roomName})` : ' (Tanpa Room)'}`,
+    value: c.id,
+  }))
+)
+
+const stickSelect = ref<number | null>(null)
+
+watch(stickSelect, (val) => {
+  if (val) {
+    selectedControllerIds.value.push(val)
+    nextTick(() => { stickSelect.value = null })
+  }
+})
+
+function removeStick(id: number) {
+  selectedControllerIds.value = selectedControllerIds.value.filter(sid => sid !== id)
+}
 
 const packageOptions = computed(() => (packages.value || [])
   .filter((p: any) => p.isActive)
   .map((p: any) => ({ label: `${p.name} — ${formatRupiah(p.price)}`, value: p.id })))
 
-const form = reactive({ customerId: null, playstationId: null, controllerId: null, packageId: null, notes: '' })
+const form = reactive({ customerId: null, playstationId: null, packageId: null, notes: '' })
 const createOpen = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -77,9 +102,10 @@ function openCreate() {
   error.value = ''
   form.customerId = null
   form.playstationId = null
-  form.controllerId = null
   form.packageId = null
   form.notes = ''
+  stickSelect.value = null
+  selectedControllerIds.value = []
   createOpen.value = true
 }
 
@@ -95,7 +121,7 @@ async function onCreate() {
       body: {
         customerId: form.customerId,
         playstationId: form.playstationId,
-        controllerId: form.controllerId,
+        controllerIds: selectedControllerIds.value,
         packageId: form.packageId,
         notes: form.notes,
       },
@@ -189,7 +215,23 @@ async function onCreate() {
             <USelect v-model="form.playstationId" :items="psOptions" searchable />
           </UFormField>
           <UFormField label="Stick (opsional)">
-            <USelect v-model="form.controllerId" :items="controllerOptions" searchable />
+            <div class="space-y-2">
+              <USelect
+                v-if="unselectedControllers.length > 0"
+                v-model="stickSelect"
+                :items="controllerAddOptions"
+                searchable
+                placeholder="Tambah stick..."
+              />
+              <div v-if="selectedControllerIds.length" class="flex flex-wrap gap-1.5">
+                <span v-for="sid in selectedControllerIds" :key="sid"
+                  class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                >
+                  {{ (controllers.value || []).find((c: any) => c.id === sid)?.assetCode || sid }}
+                  <button @click="removeStick(sid)" class="ml-0.5 rounded-full p-0.5 hover:bg-primary/20">&times;</button>
+                </span>
+              </div>
+            </div>
           </UFormField>
           <UFormField label="Paket Rental" required>
             <USelect v-model="form.packageId" :items="packageOptions" />

@@ -26,6 +26,10 @@ const mainLinks = [[{
   icon: 'i-lucide-package',
   to: '/stok',
 }, {
+  label: 'Set Room',
+  icon: 'i-lucide-layout-panel-top',
+  to: '/set-room',
+}, {
   label: 'Master Data',
   icon: 'i-lucide-database',
   type: 'trigger',
@@ -55,9 +59,9 @@ const mainLinks = [[{
     icon: 'i-lucide-box',
     to: '/master/rental-packages',
   }, {
-    label: 'Tarif Denda',
+    label: 'Master Denda',
     icon: 'i-lucide-alarm-clock',
-    to: '/master/penalty-rate',
+    to: '/master/penalty-rates',
   }, {
     label: 'Produk',
     icon: 'i-lucide-shopping-bag',

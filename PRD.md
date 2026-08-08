@@ -42,6 +42,7 @@ Sistem mencakup:
 
 * Login Admin
 * Dashboard
+* Set Room
 * Master Data
 * Main di Tempat
 * Rental PS
@@ -64,7 +65,7 @@ Pembayaran dilakukan secara manual (Cash, Transfer, atau QRIS sebagai pencatatan
 
 # 4. Role
 
-## Admin / Kasir
+## Admin
 
 Hak akses:
 
@@ -77,6 +78,8 @@ Hak akses:
 * Mengelola stok
 * Mengelola perangkat
 * Melihat laporan
+
+Hanya ada 1 role: Admin. Analogi Admin = Kasir.
 
 ---
 
@@ -111,7 +114,7 @@ Menampilkan informasi secara realtime.
 Field:
 
 * Nama Room
-* Jenis Room
+* PlayRate (relasi ke Tarif Main)
 * Status
 
 Status:
@@ -123,10 +126,12 @@ Status:
 Relasi:
 
 1 Room memiliki:
-
+* 1 Tarif Main (playRateId)
 * 1 TV
 * 1 PlayStation
 * Banyak Stick
+
+Room tidak memiliki "Jenis" — klasifikasi dilakukan melalui tarif yang di-assign di Set Room.
 
 ---
 
@@ -134,7 +139,7 @@ Relasi:
 
 Field:
 
-* Kode Aset
+* Kode Aset (auto-generate: PS-001, PS-002... jika dikosongkan)
 * Nama
 * Seri
 * Merek
@@ -156,7 +161,7 @@ Status:
 
 Field:
 
-* Kode Aset
+* Kode Aset (auto-generate: TV-001, TV-002... jika dikosongkan)
 * Nama
 * Ukuran
 * Serial Number
@@ -168,7 +173,7 @@ Field:
 
 Field:
 
-* Kode Aset
+* Kode Aset (auto-generate: STK-01, STK-02... full auto)
 * Nomor Stick
 * Kondisi
 * Status
@@ -179,9 +184,11 @@ Field:
 
 Field:
 
-* Nama Tarif
-* Jenis Room
+* Nama Tarif (contoh: "Tarif Reguler", "Tarif VIP")
 * Harga Per Jam
+* Status (Aktif/Nonaktif)
+
+Tarif dipilih per Room di halaman Set Room. Tidak ada "Jenis Room" di tarif.
 
 ---
 
@@ -190,16 +197,24 @@ Field:
 Field:
 
 * Nama Paket
-* Lama Hari
+* Lama (hari, desimal — support 0.5 hari = 12 jam, 1.5 hari = 36 jam)
 * Harga
+* Status (Aktif/Nonaktif)
+
+Tampil: "X hari (Y jam)" — proyeksi jam otomatis.
 
 ---
 
-## Tarif Denda
+## Master Denda
 
 Field:
 
-* Denda Per Jam
+* Nama Denda
+* Tipe (Per Jam / Per Hari / Tetap)
+* Tarif
+* Status (Aktif/Nonaktif)
+
+CRUD penuh. Saat return rental, sistem menggunakan denda aktif tipe `hourly` pertama.
 
 ---
 
@@ -214,7 +229,7 @@ Kategori:
 
 Field:
 
-* Kode Produk
+* Kode Produk (auto-generate: PDT-001, PDT-002... jika dikosongkan)
 * Nama Produk
 * Harga
 * Stok
@@ -244,12 +259,18 @@ Setiap perangkat memiliki identitas unik.
 
 Data:
 
-* Kode Aset
+* Kode Aset (auto-generate: PS-xxx, TV-xxx, STK-xx)
 * Nama
 * Serial Number
 * Kondisi
 * Status
 * Catatan
+
+Kebijakan hapus:
+
+* Perangkat yang ter-assign ke room harus dilepas dulu di Set Room
+* Perangkat dengan status `in_use` / `rented` tidak bisa dihapus
+* Perangkat yang sedang di-rental (`waiting_return`) tidak bisa dihapus
 
 Riwayat:
 
@@ -348,7 +369,7 @@ Diskon
 Perangkat yang dirental:
 
 * PlayStation
-* Stick
+* Stick (multiple — bisa 2 atau lebih)
 
 TV tidak termasuk.
 
@@ -651,8 +672,15 @@ Menampilkan:
 * CRUD Stick
 * CRUD Tarif Main
 * CRUD Paket Rental
-* CRUD Tarif Denda
+* CRUD Master Denda
 * CRUD Produk
+
+### Set Room
+
+* Atur perangkat (PS, TV, Stick) per room
+* Pindahkan device antar room
+* Atur tarif main per room
+* Lihat device tanpa room
 
 ### Main
 
@@ -685,8 +713,10 @@ Menampilkan:
 ### Perangkat
 
 * CRUD Perangkat
+* Kode aset auto-generate
 * Maintenance
 * Status realtime
+* Hapus ditolak jika ter-assign ke room (lepas dulu di Set Room)
 
 ### Laporan
 
@@ -721,7 +751,7 @@ Menampilkan:
 
 * id
 * name
-* room_type
+* play_rate_id (FK ke play_rates)
 * status
 
 ### playstations
@@ -767,20 +797,25 @@ Menampilkan:
 ### play_rates
 
 * id
-* room_type
+* name
 * hourly_rate
+* is_active
 
 ### rental_packages
 
 * id
 * name
-* duration_days
+* duration_days (decimal, support 0.5 = 12 jam)
 * price
+* is_active
 
 ### penalty_rates
 
 * id
-* hourly_penalty
+* name
+* type (hourly / daily / fixed)
+* amount
+* is_active
 
 ### products
 
@@ -842,6 +877,8 @@ Menampilkan:
 * id
 * transaction_id
 * playstation_id
+* controller_id (varchar, comma-separated IDs — support multi-stick)
+* package_id
 * rental_date
 * due_date
 * return_date

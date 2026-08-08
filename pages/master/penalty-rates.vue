@@ -1,23 +1,19 @@
 <script setup lang="ts">
-const crud = useCrud<any>('/api/products')
+const crud = useCrud<any>('/api/penalty-rates')
 const { items, loading } = crud
 
 const columns = [
-  { accessorKey: 'productCode', header: 'Kode' },
-  { accessorKey: 'name', header: 'Nama' },
-  { accessorKey: 'category', header: 'Kategori' },
-  { accessorKey: 'price', header: 'Harga' },
-  { accessorKey: 'stock', header: 'Stok' },
-  { accessorKey: 'minimumStock', header: 'Min Stok' },
+  { accessorKey: 'name', header: 'Nama Denda' },
+  { accessorKey: 'type', header: 'Tipe' },
+  { accessorKey: 'amount', header: 'Tarif' },
   { accessorKey: 'isActive', header: 'Status' },
   { id: 'actions', header: '', meta: { class: { th: 'text-right', td: 'text-right' } } },
 ]
 
-const categoryOptions = [
-  { label: 'Makanan', value: 'food' },
-  { label: 'Minuman', value: 'drink' },
-  { label: 'Layanan', value: 'service' },
-  { label: 'Lain-lain', value: 'other' },
+const typeOptions = [
+  { label: 'Per Jam', value: 'hourly' },
+  { label: 'Per Hari', value: 'daily' },
+  { label: 'Tetap', value: 'fixed' },
 ]
 
 const activeOptions = [
@@ -25,30 +21,23 @@ const activeOptions = [
   { label: 'Nonaktif', value: false },
 ]
 
+const PENALTY_TYPE_LABEL: Record<string, string> = { hourly: 'Per Jam', daily: 'Per Hari', fixed: 'Tetap' }
+
 const modalOpen = ref(false)
 const editing = ref<any>(null)
-const form = reactive({ productCode: '', name: '', category: 'food', price: '0', stock: 0, minimumStock: 0, isActive: true })
+const form = reactive({ name: '', type: 'hourly', amount: '5000', isActive: true })
 
 function openModal(row?: any) {
   editing.value = row || null
-  form.productCode = row?.productCode || ''
   form.name = row?.name || ''
-  form.category = row?.category || 'food'
-  form.price = row?.price?.toString() || '0'
-  form.stock = row?.stock ?? 0
-  form.minimumStock = row?.minimumStock ?? 0
+  form.type = row?.type || 'hourly'
+  form.amount = row?.amount?.toString() || '5000'
   form.isActive = row?.isActive ?? true
   modalOpen.value = true
 }
 
 async function onSave() {
-  const payload = {
-    ...form,
-    price: form.price.toString(),
-    stock: Number(form.stock),
-    minimumStock: Number(form.minimumStock),
-    isActive: form.isActive === true || form.isActive === 'true',
-  }
+  const payload = { ...form, isActive: form.isActive === true || form.isActive === 'true' }
   const ok = editing.value
     ? await crud.updateItem(editing.value.id, payload)
     : await crud.createItem(payload)
@@ -75,16 +64,16 @@ onMounted(() => crud.fetchItems())
 </script>
 
 <template>
-  <UDashboardPanel id="products">
+  <UDashboardPanel id="penalty-rates">
     <template #header>
-      <UDashboardNavbar title="Produk">
+      <UDashboardNavbar title="Master Denda">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
           <UButton icon="i-lucide-plus" @click="openModal()">
-            Tambah Produk
+            Tambah Denda
           </UButton>
         </template>
       </UDashboardNavbar>
@@ -92,7 +81,7 @@ onMounted(() => crud.fetchItems())
       <UDashboardToolbar>
         <template #left>
           <p class="text-sm text-muted">
-            Kelola produk & layanan tambahan
+            Kelola tarif denda keterlambatan
           </p>
         </template>
       </UDashboardToolbar>
@@ -100,15 +89,12 @@ onMounted(() => crud.fetchItems())
 
     <template #body>
       <UCard>
-        <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada produk">
-          <template #category-cell="{ row }">
-            <UBadge color="neutral" variant="outline">{{ PRODUCT_CATEGORY_LABEL[row.original.category] || row.original.category }}</UBadge>
+        <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada denda">
+          <template #amount-cell="{ row }">
+            {{ formatRupiah(row.original.amount) }}
           </template>
-          <template #price-cell="{ row }">
-            {{ formatRupiah(row.original.price) }}
-          </template>
-          <template #stock-cell="{ row }">
-            <UBadge :color="row.original.stock <= row.original.minimumStock ? 'error' : 'success'" variant="subtle">{{ row.original.stock }}</UBadge>
+          <template #type-cell="{ row }">
+            <UBadge color="neutral" variant="outline">{{ PENALTY_TYPE_LABEL[row.original.type] || row.original.type }}</UBadge>
           </template>
           <template #isActive-cell="{ row }">
             <UBadge :color="row.original.isActive ? 'success' : 'neutral'" variant="subtle">{{ row.original.isActive ? 'Aktif' : 'Nonaktif' }}</UBadge>
@@ -126,31 +112,20 @@ onMounted(() => crud.fetchItems())
         <template #content>
           <UCard :ui="{ body: 'space-y-4' }">
           <template #header>
-            <div class="font-semibold">{{ editing ? 'Ubah Produk' : 'Tambah Produk' }}</div>
+            <div class="font-semibold">{{ editing ? 'Ubah Denda' : 'Tambah Denda' }}</div>
           </template>
 
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Kode Produk" name="productCode">
-              <UInput v-model="form.productCode" placeholder="Kosongkan untuk auto-generate" />
-            </UFormField>
-            <UFormField label="Kategori" name="category" required>
-              <USelect v-model="form.category" :items="categoryOptions" />
-            </UFormField>
-            <UFormField label="Nama Produk" name="name" required>
-              <UInput v-model="form.name" placeholder="Indomie Goreng" />
-            </UFormField>
-            <UFormField label="Harga" name="price" required>
-              <UInput v-model="form.price" type="number" min="0">
-                <template #trailing>Rp</template>
-              </UInput>
-            </UFormField>
-            <UFormField v-if="!editing" label="Stok Awal">
-              <UInput v-model="form.stock" type="number" min="0" />
-            </UFormField>
-            <UFormField label="Minimal Stok">
-              <UInput v-model="form.minimumStock" type="number" min="0" />
-            </UFormField>
-          </div>
+          <UFormField label="Nama Denda" name="name" required>
+            <UInput v-model="form.name" placeholder="Denda Standar" />
+          </UFormField>
+          <UFormField label="Tipe" name="type" required>
+            <USelect v-model="form.type" :items="typeOptions" />
+          </UFormField>
+          <UFormField label="Tarif" name="amount" required>
+            <UInput v-model="form.amount" type="number" min="0">
+              <template #trailing>Rp</template>
+            </UInput>
+          </UFormField>
           <UFormField label="Status">
             <USelect v-model="form.isActive" :items="activeOptions" />
           </UFormField>
@@ -167,12 +142,11 @@ onMounted(() => crud.fetchItems())
 
       <ConfirmModal
         v-model:open="deleteOpen"
-        title="Hapus Produk"
+        title="Hapus Denda"
         @confirm="onDelete"
-
         :loading="deleting"
-              >
-        <span>Hapus produk <strong>{{ deleteTarget?.original?.name }}</strong>? Tindakan ini tidak dapat dibatalkan.</span>
+      >
+        <span>Hapus denda <strong>{{ deleteTarget?.original?.name }}</strong>? Tindakan ini tidak dapat dibatalkan.</span>
       </ConfirmModal>
     </template>
   </UDashboardPanel>

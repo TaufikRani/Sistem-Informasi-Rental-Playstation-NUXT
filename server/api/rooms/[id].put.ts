@@ -7,13 +7,16 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const db = useDb()
 
-  const name = String(body.name || '').trim()
-  const roomType = String(body.roomType || '').trim()
-  const status = String(body.status || 'ready').trim()
-  if (!name || !roomType) {
-    throw createError({ statusCode: 422, statusMessage: 'Nama dan jenis room wajib diisi' })
+  const [current] = await db.select().from(rooms).where(eq(rooms.id, id))
+  if (!current) throw createError({ statusCode: 404, statusMessage: 'Room tidak ditemukan' })
+
+  const name = body.name !== undefined ? String(body.name).trim() : current.name
+  const playRateId = body.playRateId !== undefined ? (body.playRateId ? Number(body.playRateId) : null) : current.playRateId
+  const status = body.status !== undefined ? String(body.status).trim() : current.status
+  if (!name) {
+    throw createError({ statusCode: 422, statusMessage: 'Nama room wajib diisi' })
   }
 
-  await db.update(rooms).set({ name, roomType, status }).where(eq(rooms.id, id))
+  await db.update(rooms).set({ name, playRateId, status }).where(eq(rooms.id, id))
   return { ok: true }
 })

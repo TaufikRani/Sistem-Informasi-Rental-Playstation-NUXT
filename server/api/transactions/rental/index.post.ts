@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { transactions, transactionDetails, rentals, playstations, controllers, rentalPackages, customers, rooms } from '../../../db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -14,12 +14,15 @@ export default defineEventHandler(async (event) => {
 
   if (ps.status !== 'ready') throw createError({ statusCode: 422, statusMessage: 'PlayStation sedang tidak tersedia' })
 
-  let controllerId: number | null = null
-  if (body.controllerId) {
-    const ctrl = await db.query.controllers.findFirst({ where: eq(controllers.id, Number(body.controllerId)) })
-    if (!ctrl) throw createError({ statusCode: 404, statusMessage: 'Stick tidak ditemukan' })
-    if (ctrl.status !== 'ready') throw createError({ statusCode: 422, statusMessage: 'Stick sedang tidak tersedia' })
-    controllerId = ctrl.id
+  let controllerId: string | null = null
+  const controllerIds = (body.controllerIds || []) as number[]
+  if (controllerIds.length > 0) {
+    const ctrls = await db.select().from(controllers).where(inArray(controllers.id, controllerIds))
+    if (ctrls.length !== controllerIds.length) throw createError({ statusCode: 404, statusMessage: 'Stick tidak ditemukan' })
+    for (const c of ctrls) {
+      if (c.status !== 'ready') throw createError({ statusCode: 422, statusMessage: `Stick ${c.controllerNumber} sedang tidak tersedia` })
+    }
+    controllerId = controllerIds.join(',')
   }
 
   const pkg = await db.query.rentalPackages.findFirst({ where: eq(rentalPackages.id, Number(body.packageId)) })
@@ -33,7 +36,7 @@ export default defineEventHandler(async (event) => {
   const invoiceNumber = await generateInvoiceNumber(db)
   const now = new Date()
   const dueDate = new Date(now)
-  dueDate.setDate(dueDate.getDate() + pkg.durationDays)
+  dueDate.setTime(dueDate.getTime() + Math.round(Number(pkg.durationDays) * 24 * 60 * 60 * 1000))
 
   const [tx] = await db.insert(transactions).values({
     invoiceNumber,
@@ -72,8 +75,8 @@ export default defineEventHandler(async (event) => {
   })
 
   await db.update(playstations).set({ status: 'rented' }).where(eq(playstations.id, playstationId))
-  if (controllerId) {
-    await db.update(controllers).set({ status: 'rented' }).where(eq(controllers.id, controllerId))
+  if (controllerIds.length > 0) {
+    await db.update(controllers).set({ status: 'rented' }).where(inArray(controllers.id, controllerIds))
   }
 
   return { id: tx.id, invoiceNumber, dueDate }

@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     penaltyAmount: sql`rentals.penalty_amount`.as('penaltyAmount'),
     playstationName: sql`playstations.name`.as('playstationName'),
     playstationCode: sql`playstations.asset_code`.as('playstationCode'),
-    controllerNumber: sql`controllers.controller_number`.as('controllerNumber'),
+    controllerId: sql`rentals.controller_id`.as('controllerId'),
     packageName: sql`rental_packages.name`.as('packageName'),
     durationDays: sql`rental_packages.duration_days`.as('durationDays'),
     packagePrice: sql`rental_packages.price`.as('packagePrice'),
@@ -43,7 +43,6 @@ export default defineEventHandler(async (event) => {
     .innerJoin(sql`rentals`, sql`rentals.transaction_id = transactions.id`)
     .leftJoin(sql`customers`, sql`customers.id = transactions.customer_id`)
     .leftJoin(sql`playstations`, sql`playstations.id = rentals.playstation_id`)
-    .leftJoin(sql`controllers`, sql`controllers.id = rentals.controller_id`)
     .leftJoin(sql`rental_packages`, sql`rental_packages.id = rentals.package_id`)
     .where(eq(transactions.id, id))
 

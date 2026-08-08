@@ -8,12 +8,11 @@ export default defineEventHandler(async (event) => {
   const db = useDb()
 
   const name = String(body.name || '').trim()
-  const roomType = String(body.roomType || '').trim()
   const hourlyRate = String(body.hourlyRate || '0')
-  if (!name || !roomType || Number(hourlyRate) < 0) {
+  if (!name || Number(hourlyRate) < 0) {
     throw createError({ statusCode: 422, statusMessage: 'Data tarif tidak valid' })
   }
 
-  await db.update(playRates).set({ name, roomType, hourlyRate, isActive: body.isActive !== false }).where(eq(playRates.id, id))
+  await db.update(playRates).set({ name, hourlyRate, isActive: body.isActive !== false }).where(eq(playRates.id, id))
   return { ok: true }
 })

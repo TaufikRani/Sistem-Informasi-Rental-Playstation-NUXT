@@ -6,11 +6,11 @@ export default defineEventHandler(async (event) => {
   const db = useDb()
 
   const name = String(body.name || '').trim()
-  const roomType = String(body.roomType || '').trim()
-  if (!name || !roomType) {
-    throw createError({ statusCode: 422, statusMessage: 'Nama dan jenis room wajib diisi' })
+  if (!name) {
+    throw createError({ statusCode: 422, statusMessage: 'Nama room wajib diisi' })
   }
+  const playRateId = body.playRateId ? Number(body.playRateId) : null
 
-  const [room] = await db.insert(rooms).values({ name, roomType }).$returningId()
+  const [room] = await db.insert(rooms).values({ name, playRateId }).$returningId()
   return { id: room.id }
 })

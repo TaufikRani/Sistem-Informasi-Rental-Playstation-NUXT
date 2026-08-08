@@ -75,9 +75,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -136,9 +136,6 @@ onMounted(() => crud.fetchItems())
           </template>
 
           <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Kode Aset" name="assetCode" required>
-              <UInput v-model="form.assetCode" placeholder="STK-11" />
-            </UFormField>
             <UFormField label="Nomor Stick" name="controllerNumber" required>
               <UInput v-model="form.controllerNumber" placeholder="11" />
             </UFormField>
@@ -169,6 +166,7 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Stick"
+        @confirm="onDelete"
 
         :loading="deleting"
               >

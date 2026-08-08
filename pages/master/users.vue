@@ -5,14 +5,8 @@ const { items, loading } = crud
 const columns = [
   { accessorKey: 'name', header: 'Nama' },
   { accessorKey: 'username', header: 'Username' },
-  { accessorKey: 'role', header: 'Role' },
   { accessorKey: 'isActive', header: 'Status' },
   { id: 'actions', header: '', meta: { class: { th: 'text-right', td: 'text-right' } } },
-]
-
-const roleOptions = [
-  { label: 'Kasir', value: 'cashier' },
-  { label: 'Admin', value: 'admin' },
 ]
 
 const activeOptions = [
@@ -22,14 +16,14 @@ const activeOptions = [
 
 const modalOpen = ref(false)
 const editing = ref<any>(null)
-const form = reactive({ name: '', username: '', password: '', role: 'cashier', isActive: true })
+const form = reactive({ name: '', username: '', password: '', role: 'admin', isActive: true })
 
 function openModal(row?: any) {
   editing.value = row || null
   form.name = row?.name || ''
   form.username = row?.username || ''
   form.password = ''
-  form.role = row?.role || 'cashier'
+  form.role = 'admin'
   form.isActive = row?.isActive ?? true
   modalOpen.value = true
 }
@@ -38,7 +32,6 @@ async function onSave() {
   const payload: Record<string, unknown> = {
     name: form.name,
     username: form.username,
-    role: form.role,
     isActive: form.isActive === true || form.isActive === 'true',
   }
   if (form.password) payload.password = form.password
@@ -59,9 +52,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -85,7 +78,7 @@ onMounted(() => crud.fetchItems())
       <UDashboardToolbar>
         <template #left>
           <p class="text-sm text-muted">
-            Kelola akun admin & kasir
+            Kelola akun admin
           </p>
         </template>
       </UDashboardToolbar>
@@ -94,9 +87,6 @@ onMounted(() => crud.fetchItems())
     <template #body>
       <UCard>
         <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada pengguna">
-          <template #role-cell="{ row }">
-            <UBadge :color="row.original.role === 'admin' ? 'warning' : 'info'" variant="subtle">{{ row.original.role === 'admin' ? 'Admin' : 'Kasir' }}</UBadge>
-          </template>
           <template #isActive-cell="{ row }">
             <UBadge :color="row.original.isActive ? 'success' : 'neutral'" variant="subtle">{{ row.original.isActive ? 'Aktif' : 'Nonaktif' }}</UBadge>
           </template>
@@ -125,9 +115,6 @@ onMounted(() => crud.fetchItems())
           <UFormField :label="editing ? 'Password (kosongkan jika tidak diubah)' : 'Password'" name="password" :required="!editing">
             <UInput v-model="form.password" type="password" placeholder="min. 6 karakter" />
           </UFormField>
-          <UFormField label="Role" name="role">
-            <USelect v-model="form.role" :items="roleOptions" />
-          </UFormField>
           <UFormField label="Status">
             <USelect v-model="form.isActive" :items="activeOptions" />
           </UFormField>
@@ -145,6 +132,7 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Pengguna"
+        @confirm="onDelete"
 
         :loading="deleting"
               >

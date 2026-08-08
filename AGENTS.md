@@ -20,7 +20,7 @@ pnpm db:migrate     # drizzle-kit migrate
 pnpm db:seed        # seed data (tsx server/db/seed.ts)
 ```
 
-- Seed: login `admin` / `admin123` (role admin) dan `kasir` / `kasir123` (role cashier).
+- Seed: login `admin` / `admin123` (role admin). Hanya 1 role — Admin.
 - Tidak ada script lint/typecheck/test.
 
 ## Tech Stack
@@ -35,7 +35,7 @@ pnpm db:seed        # seed data (tsx server/db/seed.ts)
 ## Struktur
 
 ```
-pages/            halaman aplikasi (login, main, rental, master/*, transactions, stok, reports, struk)
+pages/            halaman aplikasi (login, main, rental, set-room, master/*, transactions, stok, reports, struk)
 layouts/          auth.vue, default.vue
 components/       komponen UI (jika dibuat, komponen client)
 composables/      useCrud.ts (CRUD generic untuk master data)
@@ -51,7 +51,7 @@ public/           aset statis
 ## Konvensi Server API
 
 - Pola route: `server/api/<resource>/index.get.ts`, `index.post.ts`, `[id].put.ts`, `[id].delete.ts`.
-- Semua handler diawali `await requireUser(event)`. Endpoint khusus admin pakai `requireAdmin(event)`.
+- Semua handler diawali `await requireUser(event)`. (Hanya 1 role: Admin.)
 - Error dikirim via `throw createError({ statusCode, statusMessage })` dengan statusMessage **Bahasa Indonesia** (mis. `'Room sedang tidak tersedia'`).
 - Body di-parse via `readBody(event)`, param route via `getRouterParam(event, 'id')`, DB via `useDb()` (auto-import dari `server/utils/db.ts`).
 - Endpoint transaksi membalas `{ id, invoiceNumber }` (dan field tambahan seperti `grandTotal`, `changeAmount`).
@@ -75,17 +75,22 @@ public/           aset statis
 - Fetch data: `useFetch` untuk GET, `$fetch` untuk mutasi; error API dibaca `e?.data?.statusMessage` (selalu fallback pesan Bahasa Indonesia).
 - Halaman transaksi opsional: `pages/main/[id].vue` & `pages/rental/[id].vue` (satu kolom dengan info card + daftar item + tombol aksi), `pages/struk/[id].vue` (layout `auth.vue`, ukuran kertas 58mm via CSS `@page`).
 - Format uang via `formatRupiah`, label status via map di `utils/format.ts` (mis. `ROOM_STATUS_LABEL`, `TRANSACTION_STATUS_LABEL`), warna badge via `statusColor`.
-- Respons API acuan: `/api/dashboard/stats` → `{ rooms, mainActive, rentalActive, today:{revenue,count,productsSold}, monthRevenue, lowStock, activeMains, activeRentals, lateReturns, playstations, controllers }`; `/api/transactions?type=&status=&from=&to=` (daftar semua transaksi); `/api/transactions/rental?status=active|waiting_return|completed|all`; `/api/reports/revenue?type=day|month|year&date=` → `{ revenue:{main,rental,product,penalty,total}, main:{count,totalHours,total}, rental:{active,completed,lateCount,penalty}, products, transactions }`; `/api/penalty-rate` (GET single + PUT).
+- Respons API acuan: `/api/dashboard/stats` → `{ rooms, mainActive, rentalActive, today:{revenue,count,productsSold}, monthRevenue, lowStock, activeMains, activeRentals, lateReturns, playstations, controllers }`; `/api/transactions?type=&status=&from=&to=` (daftar semua transaksi, diurutkan `updatedAt DESC`); `/api/transactions/rental?status=active|waiting_return|completed|all`; `/api/reports/revenue?type=day|month|year&date=` → `{ revenue:{main,rental,product,penalty,total}, main:{count,totalHours,total}, rental:{active,completed,lateCount,penalty}, products, transactions }`; `/api/penalty-rates` (CRUD master denda); `/api/devices/{type}/{id}/assign` (pindahkan device ke room).
 
 ## Business Rules (dari PRD)
 
 - **Invoice**: `PS-YYYYMMDD-0001`, dibuat otomatis via `generateInvoiceNumber` (`server/utils/invoice.ts`).
 - **Struktur transaksi**: header `transactions` + detail `transaction_details` dengan `item_type`: `MAIN`, `RENTAL`, `PRODUCT`, `SERVICE`, `PENALTY`.
-- **Main di Tempat**: Mulai Main → room `occupied`, asset room `in_use`; selama sesi boleh tambah produk; Selesai → durasi di-ceil per jam × tarif, stok produk OUT, room/asset kembali `ready`.
-- **Rental**: buat rental → status transaksi `waiting_return`, PS/stick `rented`; saat pengembalian → denda = `ceil(lateHours) × hourly_penalty` ditambahkan sebagai item `PENALTY`; selesai → PS/stick `ready`.
+- **Main di Tempat**: Mulai Main → room `occupied`, asset room `in_use`; selama sesi boleh tambah produk; Selesai → durasi di-ceil per jam × tarif (re-fetch rate terbaru dari `play_rates` via `room.playRateId`), stok produk OUT, room/asset kembali `ready`.
+- **Rental**: buat rental → status transaksi `waiting_return`, PS/stick `rented` (multi-stick via `controllerIds[]`, disimpan sebagai comma-separated di `rentals.controller_id`); saat pengembalian → denda = `ceil(lateHours) × tariff_denda_aktif` ditambahkan sebagai item `PENALTY`; selesai → PS/stick `ready`.
 - **Diskon**: `nominal` atau `percent`, hanya sebelum transaksi selesai.
 - **Pembayaran**: metode `cash` / `transfer` / `qris` (pencatatan saja); `amountPaid` minimal `grandTotal`, kembalian dihitung otomatis.
 - **Stok**: berkurang saat transaksi selesai (OUT) + tercatat di `stock_movements` (`IN` / `OUT` / `CORRECTION`) dengan reference invoice.
+- **Referential Integrity**: semua endpoint delete mengecek constraint sebelum menghapus (data yang sedang digunakan tidak bisa dihapus). Device yang ter-assign ke room harus dilepas dulu di Set Room. Pesan error: *"Data ini sedang digunakan. Tidak dapat dihapus."* atau *"Lepas dari room terlebih dahulu sebelum menghapus."*
+- **Partial Update**: endpoint PUT rooms mendukung partial update — field yang tidak dikirim akan fallback ke nilai existing.
+- **Auto-Generate Kode**: asset code (PS/TV/Stick) dan product code auto-generate jika dikosongkan. Prefix: `PS-`, `TV-`, `STK-`, `PDT-` dengan padding 2-3 digit. Backend POST endpoint mencari kode tertinggi via LIKE query lalu increment +1.
+- **ConfirmModal**: komponen `components/ConfirmModal.vue` menggunakan emit `confirm` — setiap pemakaian wajib tambah `@confirm="onDelete"` di tag `<ConfirmModal>`.
+- **Sorting**: transaksi `updatedAt DESC` (selesai → naik ke atas). Room `id ASC` (stabil). Master data lainnya `updatedAt DESC` atau `id DESC`.
 
 ## Verifikasi
 

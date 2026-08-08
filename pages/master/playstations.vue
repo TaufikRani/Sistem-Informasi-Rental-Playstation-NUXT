@@ -87,9 +87,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -148,8 +148,8 @@ onMounted(() => crud.fetchItems())
           </template>
 
           <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Kode Aset" name="assetCode" required>
-              <UInput v-model="form.assetCode" placeholder="PS-006" />
+            <UFormField label="Kode Aset" name="assetCode">
+              <UInput v-model="form.assetCode" placeholder="Kosongkan untuk auto-generate" />
             </UFormField>
             <UFormField label="Nama" name="name" required>
               <UInput v-model="form.name" placeholder="PlayStation 5" />
@@ -193,6 +193,7 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus PlayStation"
+        @confirm="onDelete"
 
         :loading="deleting"
               >

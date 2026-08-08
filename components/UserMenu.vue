@@ -41,7 +41,7 @@ const appearanceItems = computed<DropdownMenuItem[]>(() => [{
 const items = computed<DropdownMenuItem[][]>(() => [[{
   type: 'label',
   label: user.value?.name || 'Pengguna',
-  description: user.value?.role === 'admin' ? 'Administrator' : 'Kasir',
+  description: 'Administrator',
 }], [{
   label: 'Tampilan',
   icon: 'i-lucide-sun-moon',

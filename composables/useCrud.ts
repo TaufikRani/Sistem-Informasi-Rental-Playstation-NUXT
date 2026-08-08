@@ -60,6 +60,7 @@ export function useCrud<T extends { id: number }>(endpoint: string) {
       return true
     } catch (e: any) {
       error.value = getErrorMessage(e, 'Gagal menghapus data')
+      toast.add({ title: error.value, color: 'error' })
       return false
     } finally {
       saving.value = false

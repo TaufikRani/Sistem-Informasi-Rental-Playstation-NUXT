@@ -48,9 +48,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -126,6 +126,7 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Customer"
+        @confirm="onDelete"
 
         :loading="deleting"
               >

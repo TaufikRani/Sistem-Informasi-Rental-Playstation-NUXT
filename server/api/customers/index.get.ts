@@ -1,4 +1,4 @@
-import { asc, like, or } from 'drizzle-orm'
+import { desc, like, or } from 'drizzle-orm'
 import { customers } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -9,8 +9,8 @@ export default defineEventHandler(async (event) => {
 
   const base = db.select().from(customers)
   if (q) {
-    const rows = await base.where(or(like(customers.name, `%${q}%`), like(customers.phone, `%${q}%`))).orderBy(asc(customers.name)).limit(20)
+    const rows = await base.where(or(like(customers.name, `%${q}%`), like(customers.phone, `%${q}%`))).orderBy(desc(customers.updatedAt)).limit(20)
     return rows
   }
-  return await base.orderBy(asc(customers.name)).limit(100)
+  return await base.orderBy(desc(customers.updatedAt)).limit(100)
 })

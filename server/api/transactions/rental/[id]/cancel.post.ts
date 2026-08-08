@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { transactions, rentals, playstations, controllers } from '../../../../db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
   if (rental) {
     await db.update(playstations).set({ status: 'ready' }).where(eq(playstations.id, rental.playstationId))
     if (rental.controllerId) {
-      await db.update(controllers).set({ status: 'ready' }).where(eq(controllers.id, rental.controllerId))
+      const ids = rental.controllerId.split(',').map(Number).filter(n => n > 0)
+      if (ids.length > 0) {
+        await db.update(controllers).set({ status: 'ready' }).where(inArray(controllers.id, ids))
+      }
     }
   }
 

@@ -9,8 +9,11 @@ export type AssetStatus = typeof ASSET_STATUS[number]
 export const ASSET_CONDITION = ['good', 'fair', 'broken'] as const
 export type AssetCondition = typeof ASSET_CONDITION[number]
 
-export const USER_ROLES = ['admin', 'cashier'] as const
+export const USER_ROLES = ['admin'] as const
 export type UserRole = typeof USER_ROLES[number]
+
+export const PENALTY_TYPES = ['hourly', 'daily', 'fixed'] as const
+export type PenaltyType = typeof PENALTY_TYPES[number]
 
 export const PRODUCT_CATEGORIES = ['food', 'drink', 'service', 'other'] as const
 export type ProductCategory = typeof PRODUCT_CATEGORIES[number]
@@ -50,7 +53,7 @@ export const users = mysqlTable('users', {
 export const rooms = mysqlTable('rooms', {
   id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 100 }).notNull().unique(),
-  roomType: varchar('room_type', { length: 50 }).notNull(),
+  playRateId: int('play_rate_id'),
   status: varchar('status', { length: 20 }).notNull().default('ready'),
   createdAt: timestamp('created_at', { mode: 'date', fsp: 0 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date', fsp: 0 }).notNull().defaultNow().onUpdateNow(),
@@ -110,7 +113,6 @@ export const customers = mysqlTable('customers', {
 export const playRates = mysqlTable('play_rates', {
   id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
-  roomType: varchar('room_type', { length: 50 }).notNull(),
   hourlyRate: decimal('hourly_rate', { precision: 12, scale: 0 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { mode: 'date', fsp: 0 }).notNull().defaultNow(),
@@ -119,7 +121,7 @@ export const playRates = mysqlTable('play_rates', {
 export const rentalPackages = mysqlTable('rental_packages', {
   id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
-  durationDays: int('duration_days').notNull(),
+  durationDays: decimal('duration_days', { precision: 6, scale: 1 }).notNull().default('1'),
   price: decimal('price', { precision: 12, scale: 0 }).notNull().default('0'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { mode: 'date', fsp: 0 }).notNull().defaultNow(),
@@ -127,7 +129,11 @@ export const rentalPackages = mysqlTable('rental_packages', {
 
 export const penaltyRates = mysqlTable('penalty_rates', {
   id: int('id').autoincrement().primaryKey(),
-  hourlyPenalty: decimal('hourly_penalty', { precision: 12, scale: 0 }).notNull().default('0'),
+  name: varchar('name', { length: 100 }).notNull(),
+  type: varchar('type', { length: 20 }).notNull().default('hourly'),
+  amount: decimal('amount', { precision: 12, scale: 0 }).notNull().default('0'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { mode: 'date', fsp: 0 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date', fsp: 0 }).notNull().defaultNow().onUpdateNow(),
 })
 
@@ -204,7 +210,7 @@ export const rentals = mysqlTable('rentals', {
   id: int('id').autoincrement().primaryKey(),
   transactionId: int('transaction_id').notNull(),
   playstationId: int('playstation_id').notNull(),
-  controllerId: int('controller_id'),
+  controllerId: varchar('controller_id', { length: 255 }),
   packageId: int('package_id'),
   rentalDate: timestamp('rental_date', { mode: 'date', fsp: 0 }).notNull(),
   dueDate: timestamp('due_date', { mode: 'date', fsp: 0 }).notNull(),

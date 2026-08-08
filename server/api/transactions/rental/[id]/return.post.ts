@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { transactions, transactionDetails, rentals, playstations, controllers, products, stockMovements, penaltyRates } from '../../../../db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -19,8 +19,8 @@ export default defineEventHandler(async (event) => {
   const lateMs = now.getTime() - dueDate.getTime()
   const lateHours = lateMs > 0 ? Math.ceil(lateMs / 3600000) : 0
 
-  const [rate] = await db.select().from(penaltyRates).limit(1)
-  const hourlyPenalty = Number(rate?.hourlyPenalty || 0)
+  const [rate] = await db.select().from(penaltyRates).where(and(eq(penaltyRates.type, 'hourly'), eq(penaltyRates.isActive, true))).limit(1)
+  const hourlyPenalty = Number(rate?.amount || 0)
   const penaltyAmount = lateHours * hourlyPenalty
 
   const items = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, id))
@@ -93,7 +93,10 @@ export default defineEventHandler(async (event) => {
 
   await db.update(playstations).set({ status: 'ready' }).where(eq(playstations.id, rental.playstationId))
   if (rental.controllerId) {
-    await db.update(controllers).set({ status: 'ready' }).where(eq(controllers.id, rental.controllerId))
+    const ids = rental.controllerId.split(',').map(Number).filter(n => n > 0)
+    if (ids.length > 0) {
+      await db.update(controllers).set({ status: 'ready' }).where(inArray(controllers.id, ids))
+    }
   }
 
   const itemsAfter = await db.select().from(transactionDetails).where(eq(transactionDetails.transactionId, id))

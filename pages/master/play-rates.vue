@@ -4,16 +4,9 @@ const { items, loading } = crud
 
 const columns = [
   { accessorKey: 'name', header: 'Nama Tarif' },
-  { accessorKey: 'roomType', header: 'Jenis Room' },
   { accessorKey: 'hourlyRate', header: 'Harga/Jam' },
   { accessorKey: 'isActive', header: 'Status' },
   { id: 'actions', header: '', meta: { class: { th: 'text-right', td: 'text-right' } } },
-]
-
-const roomTypeOptions = [
-  { label: 'Reguler', value: 'reguler' },
-  { label: 'VIP', value: 'vip' },
-  { label: 'Premium', value: 'premium' },
 ]
 
 const activeOptions = [
@@ -23,12 +16,11 @@ const activeOptions = [
 
 const modalOpen = ref(false)
 const editing = ref<any>(null)
-const form = reactive({ name: '', roomType: 'reguler', hourlyRate: '5000', isActive: true })
+const form = reactive({ name: '', hourlyRate: '5000', isActive: true })
 
 function openModal(row?: any) {
   editing.value = row || null
   form.name = row?.name || ''
-  form.roomType = row?.roomType || 'reguler'
   form.hourlyRate = row?.hourlyRate?.toString() || '5000'
   form.isActive = row?.isActive ?? true
   modalOpen.value = true
@@ -53,9 +45,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -79,7 +71,7 @@ onMounted(() => crud.fetchItems())
       <UDashboardToolbar>
         <template #left>
           <p class="text-sm text-muted">
-            Kelola tarif main per jenis room
+            Kelola tarif main — diatur per room di Set Room
           </p>
         </template>
       </UDashboardToolbar>
@@ -88,9 +80,6 @@ onMounted(() => crud.fetchItems())
     <template #body>
       <UCard>
         <ScrollableTable :data="items" :loading="loading" :columns="columns" empty="Belum ada tarif">
-          <template #roomType-cell="{ row }">
-            <UBadge color="neutral" variant="outline">{{ ROOM_TYPE_LABEL[row.original.roomType] || row.original.roomType }}</UBadge>
-          </template>
           <template #hourlyRate-cell="{ row }">
             {{ formatRupiah(row.original.hourlyRate) }}/jam
           </template>
@@ -114,10 +103,7 @@ onMounted(() => crud.fetchItems())
           </template>
 
           <UFormField label="Nama Tarif" name="name" required>
-            <UInput v-model="form.name" placeholder="Reguler" />
-          </UFormField>
-          <UFormField label="Jenis Room" name="roomType" required>
-            <USelect v-model="form.roomType" :items="roomTypeOptions" />
+            <UInput v-model="form.name" placeholder="Tarif VIP" />
           </UFormField>
           <UFormField label="Harga Per Jam" name="hourlyRate" required>
             <UInput v-model="form.hourlyRate" type="number" min="0">
@@ -141,9 +127,9 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Tarif"
-
+        @confirm="onDelete"
         :loading="deleting"
-              >
+      >
         <span>Hapus tarif <strong>{{ deleteTarget?.original?.name }}</strong>? Tindakan ini tidak dapat dibatalkan.</span>
       </ConfirmModal>
     </template>

@@ -4,15 +4,8 @@ const { items, loading } = crud
 
 const columns = [
   { accessorKey: 'name', header: 'Nama Room' },
-  { accessorKey: 'roomType', header: 'Jenis' },
   { accessorKey: 'status', header: 'Status' },
   { id: 'actions', header: '', meta: { class: { th: 'text-right', td: 'text-right' } } },
-]
-
-const roomTypeOptions = [
-  { label: 'Reguler', value: 'reguler' },
-  { label: 'VIP', value: 'vip' },
-  { label: 'Premium', value: 'premium' },
 ]
 
 const statusOptions = [
@@ -23,7 +16,7 @@ const statusOptions = [
 
 const modalOpen = ref(false)
 const editing = ref<any>(null)
-const form = reactive({ name: '', roomType: 'reguler', status: 'ready' })
+const form = reactive({ name: '', status: 'ready' })
 
 const deleteOpen = ref(false)
 const deleteTarget = ref<any>(null)
@@ -32,7 +25,6 @@ const deleting = ref(false)
 function openModal(row?: any) {
   editing.value = row || null
   form.name = row?.name || ''
-  form.roomType = row?.roomType || 'reguler'
   form.status = row?.status || 'ready'
   modalOpen.value = true
 }
@@ -51,9 +43,9 @@ function openDelete(row: any) {
 
 async function onDelete() {
   deleting.value = true
-  await crud.deleteItem(deleteTarget.value.original.id)
+  const ok = await crud.deleteItem(deleteTarget.value.original.id)
   deleting.value = false
-  deleteOpen.value = false
+  if (ok) deleteOpen.value = false
 }
 
 onMounted(() => crud.fetchItems())
@@ -89,9 +81,6 @@ onMounted(() => crud.fetchItems())
           <template #status-cell="{ row }">
             <UBadge :color="statusColor(row.original.status)" variant="subtle">{{ ROOM_STATUS_LABEL[row.original.status] || row.original.status }}</UBadge>
           </template>
-          <template #roomType-cell="{ row }">
-            <UBadge color="neutral" variant="outline">{{ ROOM_TYPE_LABEL[row.original.roomType] || row.original.roomType }}</UBadge>
-          </template>
           <template #actions-cell="{ row }">
             <div class="flex justify-end gap-1">
               <UButton color="neutral" variant="ghost" icon="i-lucide-pencil" size="sm" @click="openModal(row)" />
@@ -111,9 +100,6 @@ onMounted(() => crud.fetchItems())
           <UFormField label="Nama Room" name="name" required>
             <UInput v-model="form.name" placeholder="Room 1" />
           </UFormField>
-          <UFormField label="Jenis Room" name="roomType" required>
-            <USelect v-model="form.roomType" :items="roomTypeOptions" />
-          </UFormField>
           <UFormField v-if="editing" label="Status" name="status">
             <USelect v-model="form.status" :items="statusOptions" />
           </UFormField>
@@ -131,9 +117,9 @@ onMounted(() => crud.fetchItems())
       <ConfirmModal
         v-model:open="deleteOpen"
         title="Hapus Room"
-
+        @confirm="onDelete"
         :loading="deleting"
-              >
+      >
         <span>Hapus room <strong>{{ deleteTarget?.original?.name }}</strong>? Tindakan ini tidak dapat dibatalkan.</span>
       </ConfirmModal>
     </template>
