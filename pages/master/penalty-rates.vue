@@ -28,16 +28,25 @@ const editing = ref<any>(null)
 const form = reactive({ name: '', type: 'hourly', amount: '5000', isActive: true })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.name = row?.name || ''
-  form.type = row?.type || 'hourly'
-  form.amount = row?.amount?.toString() || '5000'
-  form.isActive = row?.isActive ?? true
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.name = data.name || ''
+    form.type = data.type || 'hourly'
+    form.amount = data.amount?.toString() || '5000'
+    form.isActive = data.isActive ?? true
+  } else {
+    editing.value = null
+    form.name = ''
+    form.type = 'hourly'
+    form.amount = '5000'
+    form.isActive = true
+  }
   modalOpen.value = true
 }
 
 async function onSave() {
-  const payload = { ...form, isActive: form.isActive === true || form.isActive === 'true' }
+  const payload = { ...form, amount: Number(form.amount), isActive: form.isActive === true || form.isActive === 'true' }
   const ok = editing.value
     ? await crud.updateItem(editing.value.id, payload)
     : await crud.createItem(payload)

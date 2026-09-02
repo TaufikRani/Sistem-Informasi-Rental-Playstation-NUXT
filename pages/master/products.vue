@@ -30,14 +30,26 @@ const editing = ref<any>(null)
 const form = reactive({ productCode: '', name: '', category: 'food', price: '0', stock: 0, minimumStock: 0, isActive: true })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.productCode = row?.productCode || ''
-  form.name = row?.name || ''
-  form.category = row?.category || 'food'
-  form.price = row?.price?.toString() || '0'
-  form.stock = row?.stock ?? 0
-  form.minimumStock = row?.minimumStock ?? 0
-  form.isActive = row?.isActive ?? true
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.productCode = data.productCode || ''
+    form.name = data.name || ''
+    form.category = data.category || 'food'
+    form.price = data.price?.toString() || '0'
+    form.stock = data.stock ?? 0
+    form.minimumStock = data.minimumStock ?? 0
+    form.isActive = data.isActive ?? true
+  } else {
+    editing.value = null
+    form.productCode = ''
+    form.name = ''
+    form.category = 'food'
+    form.price = '0'
+    form.stock = 0
+    form.minimumStock = 0
+    form.isActive = true
+  }
   modalOpen.value = true
 }
 

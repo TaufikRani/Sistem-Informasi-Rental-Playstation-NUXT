@@ -19,6 +19,7 @@ const roomOptions = computed(() => [
 ])
 
 function roomName(id: number | null) {
+  if (id === null || id === undefined) return 'Tanpa Room'
   return rooms.value?.find((r: any) => r.id === id)?.name || '-'
 }
 
@@ -44,16 +45,30 @@ const form = reactive({
 
 function openModal(row?: any) {
   editing.value = row || null
-  form.assetCode = row?.assetCode || ''
-  form.name = row?.name || ''
-  form.roomId = row?.roomId ?? null
-  form.brand = row?.brand || ''
-  form.series = row?.series || ''
-  form.serialNumber = row?.serialNumber || ''
-  form.purchaseDate = row?.purchaseDate || ''
-  form.condition = row?.condition || 'good'
-  form.status = row?.status || 'ready'
-  form.notes = row?.notes || ''
+  if (row) {
+    const data = row.original || row
+    form.assetCode = data.assetCode || ''
+    form.name = data.name || ''
+    form.roomId = data.roomId ?? null
+    form.brand = data.brand || ''
+    form.series = data.series || ''
+    form.serialNumber = data.serialNumber || ''
+    form.purchaseDate = data.purchaseDate || ''
+    form.condition = data.condition || 'good'
+    form.status = data.status || 'ready'
+    form.notes = data.notes || ''
+  } else {
+    form.assetCode = ''
+    form.name = ''
+    form.roomId = null
+    form.brand = ''
+    form.series = ''
+    form.serialNumber = ''
+    form.purchaseDate = ''
+    form.condition = 'good'
+    form.status = 'ready'
+    form.notes = ''
+  }
   modalOpen.value = true
 }
 
@@ -149,7 +164,7 @@ onMounted(() => crud.fetchItems())
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Kode Aset" name="assetCode">
-              <UInput v-model="form.assetCode" placeholder="Kosongkan untuk auto-generate" />
+              <UInput v-model="form.assetCode" :disabled="!!editing" placeholder="Kosongkan untuk auto-generate" />
             </UFormField>
             <UFormField label="Nama" name="name" required>
               <UInput v-model="form.name" placeholder="PlayStation 5" />

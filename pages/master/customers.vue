@@ -22,18 +22,28 @@ const editing = ref<any>(null)
 const form = reactive({ name: '', phone: '', address: '', identityNumber: '' })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.name = row?.name || ''
-  form.phone = row?.phone || ''
-  form.address = row?.address || ''
-  form.identityNumber = row?.identityNumber || ''
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.name = data.name || ''
+    form.phone = data.phone || ''
+    form.address = data.address || ''
+    form.identityNumber = data.identityNumber || ''
+  } else {
+    editing.value = null
+    form.name = ''
+    form.phone = ''
+    form.address = ''
+    form.identityNumber = ''
+  }
   modalOpen.value = true
 }
 
 async function onSave() {
+  const payload = { ...form }
   const ok = editing.value
-    ? await crud.updateItem(editing.value.id, { ...form })
-    : await crud.createItem({ ...form })
+    ? await crud.updateItem(editing.value.id, payload)
+    : await crud.createItem(payload)
   if (ok) modalOpen.value = false
 }
 

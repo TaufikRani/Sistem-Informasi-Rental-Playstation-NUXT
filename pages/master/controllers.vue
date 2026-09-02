@@ -18,6 +18,7 @@ const roomOptions = computed(() => [
 ])
 
 function roomName(id: number | null) {
+  if (id === null || id === undefined) return 'Tanpa Room'
   return rooms.value?.find((r: any) => r.id === id)?.name || '-'
 }
 
@@ -39,24 +40,31 @@ const editing = ref<any>(null)
 const form = reactive({ assetCode: '', controllerNumber: '', roomId: null, condition: 'good', status: 'ready', notes: '' })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.assetCode = row?.assetCode || ''
-  form.controllerNumber = row?.controllerNumber || ''
-  form.roomId = row?.roomId ?? null
-  form.condition = row?.condition || 'good'
-  form.status = row?.status || 'ready'
-  form.notes = row?.notes || ''
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.assetCode = data.assetCode
+    form.controllerNumber = data.controllerNumber
+    form.roomId = data.roomId ?? null
+    form.condition = data.condition
+    form.status = data.status
+    form.notes = data.notes
+  } else {
+    editing.value = null
+    form.assetCode = ''
+    form.controllerNumber = ''
+    form.roomId = null
+    form.condition = 'good'
+    form.status = 'ready'
+    form.notes = ''
+  }
   modalOpen.value = true
 }
 
 async function onSave() {
-  const payload = {
-    assetCode: form.assetCode,
-    controllerNumber: form.controllerNumber,
-    roomId: form.roomId,
-    condition: form.condition,
-    status: form.status,
-    notes: form.notes,
+  const payload = { ...form }
+  if (editing.value) {
+    delete payload.assetCode
   }
   const ok = editing.value
     ? await crud.updateItem(editing.value.id, payload)

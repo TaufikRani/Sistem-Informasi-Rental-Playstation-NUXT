@@ -19,12 +19,22 @@ const editing = ref<any>(null)
 const form = reactive({ name: '', username: '', password: '', role: 'admin', isActive: true })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.name = row?.name || ''
-  form.username = row?.username || ''
-  form.password = ''
-  form.role = 'admin'
-  form.isActive = row?.isActive ?? true
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.name = data.name || ''
+    form.username = data.username || ''
+    form.password = ''
+    form.role = data.role || 'admin'
+    form.isActive = data.isActive ?? true
+  } else {
+    editing.value = null
+    form.name = ''
+    form.username = ''
+    form.password = ''
+    form.role = 'admin'
+    form.isActive = true
+  }
   modalOpen.value = true
 }
 
@@ -32,6 +42,7 @@ async function onSave() {
   const payload: Record<string, unknown> = {
     name: form.name,
     username: form.username,
+    role: form.role,
     isActive: form.isActive === true || form.isActive === 'true',
   }
   if (form.password) payload.password = form.password

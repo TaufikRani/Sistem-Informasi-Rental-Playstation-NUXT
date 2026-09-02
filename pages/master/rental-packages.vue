@@ -20,11 +20,20 @@ const editing = ref<any>(null)
 const form = reactive({ name: '', durationDays: 3, price: '50000', isActive: true })
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.name = row?.name || ''
-  form.durationDays = row?.durationDays || 3
-  form.price = row?.price?.toString() || '50000'
-  form.isActive = row?.isActive ?? true
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.name = data.name || ''
+    form.durationDays = data.durationDays || 3
+    form.price = data.price?.toString() || '50000'
+    form.isActive = data.isActive ?? true
+  } else {
+    editing.value = null
+    form.name = ''
+    form.durationDays = 3
+    form.price = '50000'
+    form.isActive = true
+  }
   modalOpen.value = true
 }
 

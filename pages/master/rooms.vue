@@ -23,16 +23,24 @@ const deleteTarget = ref<any>(null)
 const deleting = ref(false)
 
 function openModal(row?: any) {
-  editing.value = row || null
-  form.name = row?.name || ''
-  form.status = row?.status || 'ready'
+  if (row) {
+    const data = row.original || row
+    editing.value = data
+    form.name = data.name || ''
+    form.status = data.status || 'ready'
+  } else {
+    editing.value = null
+    form.name = ''
+    form.status = 'ready'
+  }
   modalOpen.value = true
 }
 
 async function onSave() {
+  const payload = { ...form }
   const ok = editing.value
-    ? await crud.updateItem(editing.value.id, { ...form })
-    : await crud.createItem({ ...form })
+    ? await crud.updateItem(editing.value.id, payload)
+    : await crud.createItem(payload)
   if (ok) modalOpen.value = false
 }
 
