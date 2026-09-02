@@ -22,6 +22,13 @@
       "when": 1754150000000,
       "tag": "0002_curved_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1788372519244,
+      "tag": "0003_unique_santa_claus",
+      "breakpoints": true
     }
   ]
 }
