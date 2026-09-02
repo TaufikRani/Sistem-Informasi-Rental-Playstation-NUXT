@@ -65,6 +65,9 @@ async function main() {
     { assetCode: 'PS-003', name: 'PlayStation 5', series: 'PS5', brand: 'Sony', serialNumber: 'SN-PS5-001', roomId: 3 },
     { assetCode: 'PS-004', name: 'PlayStation 5', series: 'PS5', brand: 'Sony', serialNumber: 'SN-PS5-002', roomId: 4 },
     { assetCode: 'PS-005', name: 'PlayStation 5 Pro', series: 'PS5 Pro', brand: 'Sony', serialNumber: 'SN-PS5-003', roomId: 5 },
+    // Aset PS tambahan untuk Stok Rental (tidak di-assign ke Room)
+    { assetCode: 'PS-006', name: 'PlayStation 4 Pro (Rental)', series: 'PS4 Pro', brand: 'Sony', serialNumber: 'SN-PS4-003', roomId: null },
+    { assetCode: 'PS-007', name: 'PlayStation 5 (Rental)', series: 'PS5', brand: 'Sony', serialNumber: 'SN-PS5-004', roomId: null },
   ])
 
   // ---- 5. Televisions ----
@@ -77,8 +80,12 @@ async function main() {
       roomId: i,
     })
   }
+  // TV tambahan cadangan (tanpa room)
+  await db.insert(schema.televisions).values([
+    { assetCode: 'TV-006', name: 'TV Cadangan Lobby', size: '43 inch', serialNumber: 'SN-TV-006', roomId: null },
+  ])
 
-  // ---- 6. Controllers (2 per room, 10 total) ----
+  // ---- 6. Controllers (2 per room, 10 total + 4 stik cadangan/stok rental) ----
   let cnum = 1
   for (let room = 1; room <= 5; room++) {
     for (let s = 1; s <= 2; s++) {
@@ -89,6 +96,16 @@ async function main() {
         roomId: room,
       })
     }
+  }
+  // Stik cadangan/rental tanpa room
+  for (let s = 1; s <= 4; s++) {
+    const num = String(cnum++).padStart(2, '0')
+    await db.insert(schema.controllers).values({
+      assetCode: `STK-${num}`,
+      controllerNumber: num,
+      roomId: null,
+      notes: 'Stok Rental / Cadangan',
+    })
   }
 
   // ---- 7. Rental Packages ----
