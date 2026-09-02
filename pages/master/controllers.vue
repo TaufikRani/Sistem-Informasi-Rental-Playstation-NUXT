@@ -63,9 +63,6 @@ function openModal(row?: any) {
 
 async function onSave() {
   const payload = { ...form }
-  if (editing.value) {
-    delete payload.assetCode
-  }
   const ok = editing.value
     ? await crud.updateItem(editing.value.id, payload)
     : await crud.createItem(payload)
