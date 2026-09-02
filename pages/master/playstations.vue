@@ -44,9 +44,9 @@ const form = reactive({
 })
 
 function openModal(row?: any) {
-  editing.value = row || null
   if (row) {
     const data = row.original || row
+    editing.value = data
     form.assetCode = data.assetCode || ''
     form.name = data.name || ''
     form.roomId = data.roomId ?? null
@@ -58,6 +58,7 @@ function openModal(row?: any) {
     form.status = data.status || 'ready'
     form.notes = data.notes || ''
   } else {
+    editing.value = null
     form.assetCode = ''
     form.name = ''
     form.roomId = null
